@@ -4,6 +4,8 @@ import de.codesourcery.life.entities.Board
 
 abstract class UIController(val model : Board , private val view : View ) {
 
+	private var lastState : Option[Board] = None
+	
 	private val listener = new ClockListener() {
 		
 		def clockStateChanged(isRunning:Boolean) {
@@ -31,6 +33,7 @@ abstract class UIController(val model : Board , private val view : View ) {
 	def speedChanged(percent:Int) {
 		val delay = 1000.0 / ( 100.0 / percent )
 		clock.setTickInterval( delay.asInstanceOf[Int] )
+		view.simulatorSpeedChanged( delay.asInstanceOf[Int] )
 	}
 	
 	protected def initModel( board : Board)
@@ -45,6 +48,22 @@ abstract class UIController(val model : Board , private val view : View ) {
 		stopButtonClicked()
 		func
 		view.modelChanged()
+	}
+	
+	def getSimulationDelayInMillis() : Int = clock.getTickInterval
+	
+	def saveStateClicked() {
+		stopButtonClicked()
+		lastState = Some( model.copy() )
+		view.savedStateAvailable()
+	}
+	
+	def recallStateClicked() {
+		
+		lastState match {
+			case Some( state ) =>  updateBoard { model.valueOf( state ) }
+			case _ =>
+		}
 	}
 	
 	def cellClicked(x:Int,y:Int) {

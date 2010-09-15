@@ -12,13 +12,14 @@ import javax.swing.event.{ChangeListener,ChangeEvent}
 
 class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 
-	var controller : Option[UIController]=None 
+	private[this] var controller : Option[UIController]=None 
 	
 	private def model = controller.get.model
 	
 	def setController(controller : UIController ) {
 		require( controller != null )
 		this.controller = Some(controller)
+		updateSimulatorSpeed( controller.getSimulationDelayInMillis )
 	}
 	
 	private val speedDial = new JSlider(0,100,50) {
@@ -165,18 +166,36 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 	
 	private def round(f :Float) = Math.round(f )
 	
+	private[this] val simulatorDelay = new javax.swing.JTextField() {
+		setEditable( false )
+	}
+	
 	private[this] val clearButton = new JButton("Clear")
 	private[this] val startButton = new JButton("Start...")
 	private[this] val stopButton = new JButton("Stop") {
 		setEnabled( false )
 	}
 	
+	private[this] val saveStateButton = new JButton("Save state")
+	private[this] val recallStateButton = new JButton("Recall state") {
+		setEnabled( false )
+	}
+	
 	private[this] val resetButton = new JButton("Reset")
 	
+	def savedStateAvailable() {
+		recallStateButton.setEnabled( true )
+	}
+	
+	private def updateSimulatorSpeed( delayInMillis : Int ) {
+		simulatorDelay.setText( delayInMillis+" ms" )		
+	}
+	
+	def simulatorSpeedChanged( delayInMillis : Int ) {
+		updateSimulatorSpeed( delayInMillis )
+	}
+	
 	def simulatorStateChanged(isRunning:Boolean) {
-		
-		println("=== Simulator "+( if ( isRunning ) "running" else "stopped" )+" ===")
-					
 		clearButton.setEnabled( ! isRunning )
 		stopButton.setEnabled( isRunning )
 		startButton.setEnabled( ! isRunning )
@@ -203,7 +222,11 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 					controller.get.clearButtonClicked()
 				} else if ( button == resetButton ) {
 					controller.get.resetButtonClicked()
-				}				
+				} else if ( button == saveStateButton ) {
+					controller.get.saveStateClicked()
+				} else if ( button == recallStateButton ) {
+					controller.get.recallStateClicked()
+				}		
 			}
 		}
 		
@@ -213,12 +236,18 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 		stopButton.addActionListener( listener )
 		clearButton.addActionListener( listener )
 		resetButton.addActionListener( listener )
+		saveStateButton.addActionListener( listener )
+		recallStateButton.addActionListener( listener )		
 		
+		add( new javax.swing.JLabel( "Simulation delay" ) )
+		add( simulatorDelay )
 		add( speedDial )
 		add( startButton )
 		add( stopButton )
 		add( clearButton )
 		add( resetButton )
+		add( saveStateButton )
+		add( recallStateButton )
 	}
 	
 	def modelChanged() {

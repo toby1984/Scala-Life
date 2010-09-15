@@ -7,4 +7,8 @@ trait View {
 	def simulatorStateChanged(isRunning:Boolean)
 		
 	def modelChanged()
+	
+	def savedStateAvailable()
+	
+	def simulatorSpeedChanged( delayInMillis : Int )
 }

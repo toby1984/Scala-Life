@@ -12,6 +12,15 @@ class TwoDimensionalArray[T](val width:Int , val height:Int) {
 
 	val data = new Array[Array[Any]](width)
 	
+	def this( other : TwoDimensionalArray[T] ) {
+		this( other.width  , other.height )
+		other.visitAll( { (x:Int,y:Int,value:Option[T]) => {
+			if ( value.isDefined ) {
+				set( x ,y , value.get )
+			}
+		}} )
+	}
+	
 	private def realX(x:Int) = {
 		val result = x % width
 		if ( result >= 0 ) {
@@ -30,18 +39,6 @@ class TwoDimensionalArray[T](val width:Int , val height:Int) {
 		}
 	}
 		
-	def printBoard() {
-		
-		var lastY : Int = -1
-		visitAll( ( x , y , set ) => {
-			if ( y != lastY && lastY > -1 ) {
-				println
-			}
-			lastY = y
-			print( set +" | ")
-		} )
-	}
-	
 	def set( x : Int , y : Int , value : T ) : TwoDimensionalArray[T] = {
 		var array = data( realX( x ) )
 		if ( array == null ) {

@@ -39,6 +39,8 @@ class Clock(private val caller : ClockListener )
 				}
 			}
 			
+			def isRunning : Boolean = ! stopRequested.get() && queue.getCount  == 1
+			
 			def terminate() {
 				stopRequested.set(true)
 			}
@@ -48,6 +50,17 @@ class Clock(private val caller : ClockListener )
 			}
 		}
 		
+	    def isRunning : Boolean = {
+	    	LOCK.synchronized 
+			{
+	    		if ( clock.isDefined ) {
+	    			clock.get.isRunning
+	    		} else {
+	    			false
+	    		}
+			}
+	    }
+	    
 		def stop() = {
 			
 			val existingThread = LOCK.synchronized 
@@ -66,6 +79,8 @@ class Clock(private val caller : ClockListener )
 				existingThread.get.waitForDeath()
 			}
 		}
+		
+		def getTickInterval : Int = tickInterval.get
 		
 		def setTickInterval( milliseconds : Int ) {
 			require( milliseconds >= 0 )

@@ -1,18 +1,27 @@
 package de.codesourcery.life.entities
 
-class Board(val width:Int , val height:Int)  {
+class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 
-	var board = TwoDimensionalArray[Boolean](width,height)
-	
+	private var board = new TwoDimensionalArray(b)
 	private var generation = 1
 	
-	def this(b : Board) = {
-		this( b.width , b.height )
-		for ( x <- 0 to width ; y <- 0 to height ) {
-			if ( b.get( x , y ) ) {
-				set( x, y )
-			}
-		}
+	def this( w:Int , h:Int) {
+		this( TwoDimensionalArray[Boolean](w,h))
+	}
+	
+	def width : Int = board.width
+	
+	def height : Int = board.height
+	
+	def valueOf( other : Board ) {
+		board = new TwoDimensionalArray( other.board )
+		generation = other.generation 
+	}
+	
+	def copy() : Board = {
+		val tmp = new Board( width , height )
+		tmp.valueOf( this )
+		tmp
 	}
 	
 	override def toString() : String = "Board[ "+width+" x "+height+" ]"
