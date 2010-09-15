@@ -3,7 +3,7 @@ package de.codesourcery.life.entities
 class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 
 	private var board = new TwoDimensionalArray(b)
-	private var generation = 1
+	private var currentGeneration = 1
 	
 	def this( w:Int , h:Int) {
 		this( TwoDimensionalArray[Boolean](w,h))
@@ -15,7 +15,7 @@ class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 	
 	def valueOf( other : Board ) {
 		board = new TwoDimensionalArray( other.board )
-		generation = other.generation 
+		currentGeneration = other.generation 
 	}
 	
 	def copy() : Board = {
@@ -26,13 +26,11 @@ class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 	
 	override def toString() : String = "Board[ "+width+" x "+height+" ]"
 	
-	def getGeneration() : Int = {
-		return generation
-	}
+	def generation : Int = currentGeneration
 	
 	def reset() {
 		visitAll( ( x , y , isSet ) => { board.set( x,y,false ) } )
-		generation = 1
+		currentGeneration = 1
 	}
 	
 	def visitAll( func : => (Int,Int,Boolean) => Unit ) {
@@ -108,7 +106,7 @@ class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 		
 		// advance by one generation
 		board = newBoard
-		generation += 1
+		currentGeneration += 1
 		
 		return ! isStable
 	}

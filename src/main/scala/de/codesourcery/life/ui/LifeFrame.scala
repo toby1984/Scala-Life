@@ -28,7 +28,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 		})
 	}
 	
-	private def getModel : Board = controller.get.getModel
+	private def model : Board = controller.get.model
 	
 	private val drawPanel = new JPanel() 
 	{
@@ -45,7 +45,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			
 			override def mouseDragged(ev : java.awt.event.MouseEvent) {
 				
-				val currentCoords = getModelCoordsForPoint( getModel , ev.getX , ev.getY )
+				val currentCoords = getModelCoordsForPoint( model , ev.getX , ev.getY )
 				if ( ! lastCoords.isDefined || lastCoords.get != currentCoords ) {
 					controller.get.cellClicked( currentCoords._1 , currentCoords._2 )
 					lastCoords = Some( currentCoords )
@@ -56,7 +56,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 				if ( ev.getClickCount == 1 ) {
 					controller match {
 						case Some(ctrl) => {
-							val coords = getModelCoordsForPoint( getModel , ev.getX , ev.getY )						
+							val coords = getModelCoordsForPoint( model , ev.getX , ev.getY )						
 							ctrl.cellClicked(  coords._1 , coords._2 )
 						}
 						case _ =>
@@ -79,7 +79,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			var maxX  = getWidth
 			var maxY = getHeight 
 			
-			val board = getModel
+			val board = model
 			
 			val stepX : Int = Math.floor( maxX / board.width ).asInstanceOf[Int]
 			val stepY : Int = Math.floor( maxY / board.height ).asInstanceOf[Int]
@@ -251,7 +251,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 	
 	def modelChanged() {
 		if ( controller.isDefined ) {
-			setTitle( "Generation "+getModel.getGeneration() )
+			setTitle( "Generation "+model.generation )
 		}
 		drawPanel.drawBuffered()
 	}

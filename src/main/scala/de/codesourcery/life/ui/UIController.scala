@@ -3,7 +3,7 @@ package de.codesourcery.life.ui
 import de.codesourcery.life.entities.Board
 import de.codesourcery.life.simulator._
 
-abstract class UIController(private val model : Board , private val view : View ) {
+abstract class UIController(private val m : Board , private val view : View ) {
 
 	private var lastState : Option[Board] = None
 	
@@ -23,7 +23,7 @@ abstract class UIController(private val model : Board , private val view : View 
 		}
     }
 	
-	def getModel() : Board = model
+	def model : Board = m
     
 	private val clock = new Clock( listener )
 	
