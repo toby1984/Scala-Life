@@ -10,11 +10,16 @@ import javax.swing.JPanel
 import javax.swing.JSlider
 import javax.swing.event.{ChangeListener,ChangeEvent}
 
-class LifeFrame extends javax.swing.JFrame("Generation 1") {
+class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 
 	var controller : Option[UIController]=None 
 	
 	private def model = controller.get.model
+	
+	def setController(controller : UIController ) {
+		require( controller != null )
+		this.controller = Some(controller)
+	}
 	
 	private val speedDial = new JSlider(0,100,50) {
 		addChangeListener( new ChangeListener() { 
@@ -29,7 +34,24 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") {
 		private val CANVAS_WIDTH = 320
 		private val CANVAS_HEIGHT = 240
 		
-		private val someMouseListener : java.awt.event.MouseListener = new java.awt.event.MouseAdapter() {
+		private val someMouseListener : java.awt.event.MouseAdapter = new java.awt.event.MouseAdapter() 
+		{
+			
+			var lastCoords : Option[(Int,Int)] = None
+			
+			override def mouseReleased(ev : java.awt.event.MouseEvent) {
+				lastCoords = None
+			}
+			
+			override def mouseDragged(ev : java.awt.event.MouseEvent) {
+				
+				val currentCoords = getModelCoordsForPoint( model , ev.getX , ev.getY )
+				if ( ! lastCoords.isDefined || lastCoords.get != currentCoords ) {
+					controller.get.cellClicked( currentCoords._1 , currentCoords._2 )
+					lastCoords = Some( currentCoords )
+				}
+			}
+			
 			override def mouseClicked( ev : java.awt.event.MouseEvent ) {
 				if ( ev.getClickCount == 1 ) {
 					controller match {
@@ -135,6 +157,7 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") {
 		
 		// drawPanel constructor
 		addMouseListener( someMouseListener )
+		addMouseMotionListener( someMouseListener )
 		
 		val mySize = new java.awt.Dimension( CANVAS_WIDTH, CANVAS_HEIGHT ) 
 		setPreferredSize( mySize )

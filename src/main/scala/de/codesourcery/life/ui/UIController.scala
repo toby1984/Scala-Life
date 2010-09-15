@@ -2,7 +2,7 @@ package de.codesourcery.life.ui
 
 import de.codesourcery.life.entities.Board
 
-abstract class UIController(val model : Board , private val view : LifeFrame ) {
+abstract class UIController(val model : Board , private val view : View ) {
 
 	private val listener = new ClockListener() {
 		
@@ -49,7 +49,6 @@ abstract class UIController(val model : Board , private val view : LifeFrame ) {
 	
 	def cellClicked(x:Int,y:Int) {
 		updateBoard {
-			println( "clicked: "+x+","+y)
 			if ( model.isAlive( x , y ) ) {
 				model.clear( x , y )
 			} else {
@@ -69,6 +68,6 @@ abstract class UIController(val model : Board , private val view : LifeFrame ) {
 	
 	// constructor code
 	speedChanged(50)
-	view.controller =  Some( this ) // this escapes constructor...
+	view.setController( this ) // this escapes constructor...
 	view.modelChanged()
 }

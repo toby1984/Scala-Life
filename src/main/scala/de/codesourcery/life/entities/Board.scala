@@ -26,25 +26,6 @@ class Board(val width:Int , val height:Int)  {
 		generation = 1
 	}
 	
-	def printBoard() {
-		
-		var lastY : Int = -1
-		board.visitAll( ( x , y , set ) => {
-			if ( y != lastY && lastY > -1 ) {
-				println
-			}
-			lastY = y
-			set match {
-				case Some( value ) => if ( value ) {
-					print( " X | ")
-				} else {
-					print( "   | " )
-				}
-				case None => print( "   | " )
-			}
-		})
-	}
-	
 	def visitAll( func : => (Int,Int,Boolean) => Unit ) {
 		board.visitAll( (x : Int,y : Int,isSet : Option[Boolean]) => 
 			if ( isSet.isDefined ) {
@@ -70,18 +51,6 @@ class Board(val width:Int , val height:Int)  {
 	def set(x : Int , y : Int) : Board = {
 		board.set(x,y,true)
 		this
-	}
-	
-	def printNeightbours() {
-		
-		var lastY : Int = -1
-		board.visitAll( ( x , y , set ) => {
-			if ( y != lastY && lastY > -1 ) {
-				println
-			}
-			lastY = y
-			print( getNeighbourCount(  x , y ) +" | " )
-		} )
 	}
 	
 	def isAlive(x:Int,y:Int) : Boolean = board.get( x , y) match {
@@ -118,11 +87,10 @@ class Board(val width:Int , val height:Int)  {
 				newBoard.set( x , y , false ) // cell dies
 				isStable = false
 			} else if ( ! isAlive && count == 3 ) {
-				newBoard.set( x , y , true ) // cell comes alive
+				newBoard.set( x , y , true ) // cell comes to life
 				isStable = false
-			} else {
-				// just copy state
-				newBoard.set( x , y , isAlive )
+			} else if ( isAlive ){
+				newBoard.set( x , y , true )
 			}
 			
 		}
