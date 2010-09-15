@@ -34,7 +34,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	}
 	
 	def speedChanged(percent:Int) {
-		val delay = 1000.0 / ( 100.0 / percent )
+		val delay = Math.round( 1000.0  * ( percent / 100.0 ) )
 		clock.setTickInterval( delay.asInstanceOf[Int] )
 		view.simulatorSpeedChanged( delay.asInstanceOf[Int] )
 	}
