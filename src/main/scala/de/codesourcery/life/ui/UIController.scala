@@ -1,6 +1,7 @@
 package de.codesourcery.life.ui
 
 import de.codesourcery.life.entities.Board
+import de.codesourcery.life.simulator._
 
 abstract class UIController(private val model : Board , private val view : View ) {
 

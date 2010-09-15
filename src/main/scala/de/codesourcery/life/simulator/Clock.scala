@@ -1,4 +1,4 @@
-package de.codesourcery.life.ui
+package de.codesourcery.life.simulator
 
 import de.codesourcery.life.entities.Board
 import java.util.concurrent.CountDownLatch

@@ -1,4 +1,4 @@
-package de.codesourcery.life.ui
+package de.codesourcery.life.simulator
 
 trait ClockListener {
 	
