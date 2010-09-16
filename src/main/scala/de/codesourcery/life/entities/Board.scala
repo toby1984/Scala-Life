@@ -1,69 +1,58 @@
 package de.codesourcery.life.entities
 
-class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
+import scala.xml.Node
+import scala.xml.Elem
 
-	private var board = new TwoDimensionalArray(b)
+class Board private (private var torus : Torus[Boolean] ) {
+
 	private var currentGeneration = 1
 	
 	def this( w:Int , h:Int) {
-		this( TwoDimensionalArray[Boolean](w,h))
+		this( Board.createTorus(w,h) )
 	}
 	
-	def width : Int = board.width
-	
-	def height : Int = board.height
-	
-	def valueOf( other : Board ) {
-		board = new TwoDimensionalArray( other.board )
-		currentGeneration = other.generation 
-	}
-	
-	def copy() : Board = {
-		val tmp = new Board( width , height )
-		tmp.valueOf( this )
-		tmp
-	}
+	def width : Int = torus.width
+	def height : Int = torus.height
 	
 	override def toString() : String = "Board[ "+width+" x "+height+" ]"
 	
 	def generation : Int = currentGeneration
 	
+	def createCopy() : Board = {
+		val result = new Board( torus.createCopy() )
+		result.currentGeneration = currentGeneration
+		result
+	}
+	
+	def valueOf( b : Board) {
+		torus = b.torus.createCopy
+		currentGeneration = b.currentGeneration 
+	}
+	
 	def reset() {
-		visitAll( ( x , y , isSet ) => { board.set( x,y,false ) } )
+		visitAll( ( x , y , isSet ) => { torus.set( x,y,false ) } )
 		currentGeneration = 1
 	}
 	
 	def visitAll( func : => (Int,Int,Boolean) => Unit ) {
-		board.visitAll( (x : Int,y : Int,isSet : Option[Boolean]) => 
-			if ( isSet.isDefined ) {
-				func( x , y , isSet.get )
-			} else {
-				func(x , y, false )
-			}
+		torus.visitAll( (x : Int,y : Int,isSet : Boolean) => 
+			func( x , y , isSet )
 		)
 	}
 	
-	def get(x:Int,y:Int) : Boolean = {
-		board.get( x, y ) match {
-			case None => false
-			case Some(value) => value
-		}
-	}
+	def get(x:Int,y:Int) : Boolean = torus.get( x, y )
 	
 	def clear(x : Int , y : Int) : Board = {
-		board.set(x,y,false)
+		torus.set(x,y,false)
 		this
 	}	
 	
 	def set(x : Int , y : Int) : Board = {
-		board.set(x,y,true)
+		torus.set(x,y,true)
 		this
 	}
 	
-	def isAlive(x:Int,y:Int) : Boolean = board.get( x , y) match {
-			case Some(x) => x
-			case _ => false
-	}
+	def isAlive(x:Int,y:Int) : Boolean = torus.get( x , y)
 	
 	/**
 	 * 
@@ -73,22 +62,21 @@ class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 		
 		// calculate neighbour count once 
 		// for each field
-		val neighbourCount = new TwoDimensionalArray[Int]( width , height )
+		val neighbourCount = new AnyTorus[Int]( width , height )
 		
-		val countFunction : (Int ,Int ,Option[Boolean]) => Unit = ( x , y , value ) => {
+		val countFunction : (Int ,Int ,Boolean) => Unit = ( x , y , value ) => {
 			neighbourCount.set( x , y , getNeighbourCount( x , y ) )
 		}
-		board.visitAll( countFunction )
+		torus.visitAll( countFunction )
 		
 		// apply the rules to a new board
-		val newBoard = new TwoDimensionalArray[Boolean](width,height)
+		val newBoard = Board.createTorus(width,height)
 		
 		var isStable = true 
 		
-		val lifeFunction : ( Int , Int , Option[Boolean]) => Unit = (x,y,isSet) => 
+		val lifeFunction : ( Int , Int , Boolean) => Unit = (x,y,isAlive) => 
 		{
-			val count = neighbourCount.get( x ,y ).get
-			var isAlive = if ( isSet.isDefined ) isSet.get else false
+			val count = neighbourCount.get( x ,y )
 			
 			if ( isAlive && ( count < 2 || count > 3 ) ) {
 				newBoard.set( x , y , false ) // cell dies
@@ -102,29 +90,28 @@ class Board private[this] (private var b : TwoDimensionalArray[Boolean]) {
 			
 		}
 		
-		board.visitAll( lifeFunction )
+		torus.visitAll( lifeFunction )
 		
 		// advance by one generation
-		board = newBoard
+		torus = newBoard
 		currentGeneration += 1
 		
 		return ! isStable
 	}
 
-	def getNeighbourCount(x:Int,y:Int) : Int = {
+	private def getNeighbourCount(x:Int,y:Int) : Int = {
 		
 		var result = 0;
-		val f : (Int,Int,Option[Boolean]) => Unit = {
-			( currentX , currentY , isSet ) => 
+		val f : (Int,Int,Boolean) => Unit = {
+			( currentX , currentY , set ) => 
 			{
-				val set = if ( isSet.isDefined ) isSet.get else false  
 				if ( set && ( currentX != x || currentY != y ) ) {
 					result += 1
 				}
 			}
 		}
 		
-		board.visit( x - 1 , y - 1 , x + 1  , y + 1 , f );
+		torus.visit( x - 1 , y - 1 , x + 1  , y + 1 , f );
 		return result
 	}
 	
@@ -134,4 +121,55 @@ object Board {
 	
 	def apply( width : Int , height : Int ) : Board = new Board( width , height )
 	
+	private def add(n:Node,c:Node):Node = n match { case e:Elem => e.copy(child=e.child++c) }
+	
+	def saveToFile(board:Board , file : String ) {
+		
+		var cells : scala.xml.NodeSeq = null
+			
+		board.visitAll( (x:Int,y:Int,isSet:Boolean) => {
+			if ( isSet ) {
+				if ( cells == null ) {
+					cells = <cell x={x.toString} y={y.toString}/>
+				} else {
+					cells = cells ++ <cell x={x.toString} y={y.toString}/>
+				}
+			}
+		} )
+		
+		val node = <life>
+                     <width>{board.width}</width>
+                     <height>{board.height}</height>
+                     <generation>{board.generation}</generation>
+                     <cells>{cells}</cells>
+                   </life>
+		
+		scala.xml.XML.saveFull( file , node , "UTF-8" , true , null )
+	}
+	
+	def populateFromFile(board:Board , file:String) {
+		
+		val data = scala.xml.XML.loadFile( file )
+		
+		val w = ( data \\ "width" ).text.toInt
+		val h = ( data \\ "height" ).text.toInt
+		val generation = ( data \\ "generation" ).text.toInt
+		
+		val tmp = new Board( w , h )
+		tmp.currentGeneration = generation
+		
+		val aliveCells = ( data \\ "cell" )
+		for ( cell <- aliveCells ) {
+			val x = ( cell \ "@x" ).text.toInt
+			val y = ( cell \ "@y" ).text.toInt
+			tmp.set(x, y)
+		}
+		board.torus.setData( tmp.torus.getData() )
+		board.currentGeneration = tmp.currentGeneration
+	}
+	
+	private def createTorus( w : Int  , h:Int) : Torus[Boolean] = {
+//		new AnyTorus[Boolean](w,h)
+		new BitfieldTorus(w,h)
+	}
 }

@@ -17,6 +17,15 @@ object Main{
 	{
 			val model = initModel( Board( 100 , 100 ) )
 			
+//			var time = -System.currentTimeMillis
+//			var i = 1600
+//			while ( i > 0 ) {
+//				model.advance
+//				i-=1
+//			}
+//			time += System.currentTimeMillis
+//			println("Time: "+time)
+			
 			val view = new LifeFrame()
 			view.setVisible( true )
 			

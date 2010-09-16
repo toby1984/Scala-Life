@@ -1,9 +1,11 @@
 package de.codesourcery.life.ui
 
+import javax.swing.filechooser.FileFilter
 import de.codesourcery.life.entities.Board
 import java.awt.FlowLayout
 import java.awt.BorderLayout
 import java.awt.event._
+import javax.swing.JFileChooser
 import javax.swing.SwingUtilities
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -87,12 +89,9 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			maxX = stepX * board.width
 			maxY = stepY * board.height
 			
-			// clear canvas
-			graphics.setColor( java.awt.Color.white )
-			graphics.fillRect( 0 , 0  , maxX , maxY )
+			// draw grid
 			graphics.setColor( java.awt.Color.black )
 			
-			// draw grid
 			var x : Int = 0;
 			while( x <= maxX ) {
 				graphics.drawLine( x , 0 , x  , maxY )
@@ -122,37 +121,21 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			board.visitAll( drawFunction )			
 		}
 	
-		override def addNotify() {
-			super.addNotify()
-			createBufferStrategy( 2 )
-		}
-		
-		def drawBuffered() {
-			repaint()
-		}
-		
-		def drawBuffered( f: => java.awt.Graphics => Unit) {
-
-			val strategy = getBufferStrategy()
-			do {
-				do {
-					val graphics = strategy.getDrawGraphics()
-					try {
-						f( graphics )
-					} finally {
-						graphics.dispose()
-					}
-				} while (strategy.contentsRestored())
-				strategy.show()
-			} while (strategy.contentsLost())
-		}
-		
 		override def paint( graphics : java.awt.Graphics ) {
+			
+			val old1 = getBackground()
+			val old2 = getForeground()
+			
+			setForeground( java.awt.Color.WHITE )
+			setBackground( java.awt.Color.WHITE )
+			super.paint(graphics )
+			
+			setForeground( old2 )
+			setBackground( old1 )
+			
 			if ( controller.isDefined ) {
 				paintFunction( graphics )
-			} else {
-				super.paint(graphics )
-			}
+			} 
 		}	
 		
 		// drawPanel constructor
@@ -168,6 +151,9 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 	private[this] val simulatorDelay = new javax.swing.JTextField() {
 		setEditable( false )
 	}
+	
+	private[this] val loadFromFileButton = new JButton("Load...")
+	private[this] val saveToFileButton = new JButton("Save...")
 	
 	private[this] val clearButton = new JButton("Clear")
 	private[this] val startButton = new JButton("Start...")
@@ -201,6 +187,39 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 		controlPanel.repaint()
 	}
 	
+	private def showFileChooser( showSaveDialog : Boolean ) : Option[String] = {
+		val chooser = new javax.swing.JFileChooser()
+		
+		chooser.setFileFilter( new FileFilter() {
+			def accept(file:java.io.File) : Boolean = {
+				file.isDirectory() || ( file.isFile() && file.getName().endsWith(".life.xml") )
+			}
+			
+			def getDescription() : String = "*.life.xml"
+		} )
+		
+		val retVal = if ( showSaveDialog) {
+			chooser.showSaveDialog( LifeFrame.this ) 
+		} else {
+			chooser.showOpenDialog( LifeFrame.this ) 
+		}
+		
+		if ( retVal == JFileChooser.APPROVE_OPTION) {
+			val path = chooser.getSelectedFile().getAbsolutePath()
+			if ( path.endsWith(".life.xml" ) ) {
+				Some( path )
+			} else {
+				Some( path+".life.xml" )
+			}
+		} else {
+			None
+		}
+	}
+	
+	def querySaveFileName() : Option[String] = showFileChooser( true )
+		
+	def queryLoadFileName() : Option[String] = showFileChooser( false )
+	
 	private val controlPanel = new JPanel() {
 		
 		private val listener = new ActionListener() {
@@ -225,7 +244,11 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 					controller.get.saveStateClicked()
 				} else if ( button == recallStateButton ) {
 					controller.get.recallStateClicked()
-				}		
+				} else if ( button == loadFromFileButton) {
+					controller.get.loadStateFromFileClicked()
+				} else if ( button == saveToFileButton) {
+					controller.get.saveStateToFileClicked()
+				}				
 			}
 		}
 		
@@ -237,6 +260,8 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 		resetButton.addActionListener( listener )
 		saveStateButton.addActionListener( listener )
 		recallStateButton.addActionListener( listener )		
+		loadFromFileButton.addActionListener( listener )
+		saveToFileButton.addActionListener( listener )
 		
 		add( new javax.swing.JLabel( "Simulation delay" ) )
 		add( simulatorDelay )
@@ -247,13 +272,15 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 		add( resetButton )
 		add( saveStateButton )
 		add( recallStateButton )
+		add( loadFromFileButton )
+		add( saveToFileButton )
 	}
 	
 	def modelChanged() {
 		if ( controller.isDefined ) {
 			setTitle( "Generation "+model.generation )
 		}
-		drawPanel.drawBuffered()
+		drawPanel.repaint()
 	}
 	
 	setDefaultCloseOperation(  javax.swing.JFrame.EXIT_ON_CLOSE )

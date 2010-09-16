@@ -9,11 +9,35 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 	private val listener = new ClockListener() {
 		
+		var lastCall : Long = 0
+		var allFps : Long = 0
+		var counter : Long = 0
+		
 		def clockStateChanged(isRunning:Boolean) {
+			if ( isRunning == false ) {
+				allFps = 0
+				lastCall = 0
+				counter = 0
+			}
 			view.simulatorStateChanged( isRunning )
 		}
 	
 		def onTick() : Boolean = {
+			
+			val currentTime = System.currentTimeMillis
+			if (lastCall != 0 ) {
+				
+				val duration = currentTime - lastCall
+				val fps = Math.round(1000.0 / duration).asInstanceOf[Int]
+				
+				counter+=1
+				allFps += fps
+				
+				val avgFps = ( allFps / counter )
+				println("FPS: "+avgFps)
+			}
+			lastCall = currentTime
+			
 			if ( model.advance() ) {
 				view.modelChanged()
 				true
@@ -57,14 +81,18 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 	def saveStateClicked() {
 		stopButtonClicked()
-		lastState = Some( model.copy() )
+		lastState = Some( model.createCopy() )
 		view.savedStateAvailable()
 	}
 	
 	def recallStateClicked() {
 		
 		lastState match {
-			case Some( state ) =>  updateBoard { model.valueOf( state ) }
+			case Some( state ) =>  {
+				updateBoard { 
+					model.valueOf( state ) 
+				}
+			}
 			case _ =>
 		}
 	}
@@ -83,6 +111,23 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	def stopButtonClicked() {
 		clock.stop()
 	}
+	
+	def saveStateToFileClicked() {
+		val fileName = view.querySaveFileName()
+		if ( fileName.isDefined ) {
+			stopButtonClicked()
+			Board.saveToFile( model , fileName.get )
+		}
+	}
+	
+	def loadStateFromFileClicked() {
+		val fileName = view.queryLoadFileName()
+		if ( fileName.isDefined ) {
+			updateBoard {
+				Board.populateFromFile( model , fileName.get )
+			}
+		}
+	}	
 	
 	def startButtonClicked() {
 		clock.start()

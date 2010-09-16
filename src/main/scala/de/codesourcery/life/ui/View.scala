@@ -11,4 +11,8 @@ trait View {
 	def savedStateAvailable()
 	
 	def simulatorSpeedChanged( delayInMillis : Int )
+	
+	def querySaveFileName() : Option[String]
+	
+	def queryLoadFileName() : Option[String]	
 }
