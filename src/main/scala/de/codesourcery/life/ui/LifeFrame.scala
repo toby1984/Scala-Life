@@ -2,6 +2,7 @@ package de.codesourcery.life.ui
 
 import javax.swing.filechooser.FileFilter
 import de.codesourcery.life.entities.Board
+import java.awt.font._
 import java.awt.FlowLayout
 import java.awt.BorderLayout
 import java.awt.event._
@@ -12,7 +13,7 @@ import javax.swing.JPanel
 import javax.swing.JSlider
 import javax.swing.event.{ChangeListener,ChangeEvent}
 
-class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
+class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 
 	private[this] var controller : Option[UIController]=None 
 	
@@ -81,6 +82,8 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			var maxX  = getWidth
 			var maxY = getHeight 
 			
+			val drawGrid = true
+			
 			val board = model
 			
 			val stepX : Int = Math.floor( maxX / board.width ).asInstanceOf[Int]
@@ -90,18 +93,21 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 			maxY = stepY * board.height
 			
 			// draw grid
+			val oldColor = graphics.getColor
 			graphics.setColor( java.awt.Color.black )
 			
-			var x : Int = 0;
-			while( x <= maxX ) {
-				graphics.drawLine( x , 0 , x  , maxY )
-				x += stepX
-			}
-			
-			var y : Int = 0;
-			while( y <= maxY) {
-				graphics.drawLine( 0 , y , maxX , y )
-				y += stepY
+			if ( drawGrid ) {
+				var x : Int = 0;
+				while( x <= maxX ) {
+					graphics.drawLine( x , 0 , x  , maxY )
+					x += stepX
+				}
+				
+				var y : Int = 0;
+				while( y <= maxY) {
+					graphics.drawLine( 0 , y , maxX , y )
+					y += stepY
+				}
 			}
 			
 			// render board
@@ -118,24 +124,28 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 					}
 				}
 			}
-			board.visitAll( drawFunction )			
+			board.visitAll( drawFunction )
+			
+			val text = "Generation: "+board.generation
+			val metrics = graphics.getFontMetrics
+			val m =
+				metrics.getStringBounds( text , 0, text.length() ,  graphics )
+			
+			graphics.setColor( java.awt.Color.BLACK )
+			graphics.fillRect( 50,50,m.getWidth().asInstanceOf[Int],m.getHeight().asInstanceOf[Int])
+			graphics.setColor( java.awt.Color.WHITE )
+			graphics.drawString( text, 50,50+metrics.getAscent-1 )
+			
+			graphics.setColor( oldColor )
 		}
-	
+		
 		override def paint( graphics : java.awt.Graphics ) {
 			
-			val old1 = getBackground()
-			val old2 = getForeground()
-			
-			setForeground( java.awt.Color.WHITE )
-			setBackground( java.awt.Color.WHITE )
 			super.paint(graphics )
-			
-			setForeground( old2 )
-			setBackground( old1 )
 			
 			if ( controller.isDefined ) {
 				paintFunction( graphics )
-			} 
+			}
 		}	
 		
 		// drawPanel constructor
@@ -173,7 +183,8 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 	}
 	
 	private def updateSimulatorSpeed( delayInMillis : Int ) {
-		simulatorDelay.setText( delayInMillis+" ms" )		
+		println("---new simulator speed: "+delayInMillis+"---")
+		simulatorDelay.setText( delayInMillis+" ms" )						
 	}
 	
 	def simulatorSpeedChanged( delayInMillis : Int ) {
@@ -277,9 +288,6 @@ class LifeFrame extends javax.swing.JFrame("Generation 1") with View {
 	}
 	
 	def modelChanged() {
-		if ( controller.isDefined ) {
-			setTitle( "Generation "+model.generation )
-		}
 		drawPanel.repaint()
 	}
 	

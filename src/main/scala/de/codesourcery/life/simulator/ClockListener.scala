@@ -1,5 +1,10 @@
 package de.codesourcery.life.simulator
 
+/**
+ * Listens to clock ticks and state changes.
+ *  
+ * @author tobias.gierke@code-sourcery.de
+ */
 trait ClockListener {
 	
 	/**
@@ -10,6 +15,7 @@ trait ClockListener {
 	def clockStateChanged(isRunning:Boolean)
 	
 	/**
+	 * Invoked on every clock tick.
 	 * 
 	 * @return <code>true</code> if clock should continue running, otherwise <code>false</code>
 	 */

@@ -3,10 +3,10 @@ package de.codesourcery.life.entities
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * A generic two-dimensional array that automatically wraps
- * invalid indices.
- *  
- * @param b
+ * A generic torus that stores it's values in a two-dimensional
+ * object array.
+ * 
+ * @author Tobias.Gierke@code-sourcery.de
  */
 class AnyTorus[T]( private val data : TwoDimensionalStorage[T] ) extends Torus[T](data) {
 

@@ -4,15 +4,30 @@ import de.codesourcery.life.entities.Board
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic._
 
+/**
+ * Creates a 'clock' that periodically calls a {@link ClockListener}.
+ * 
+ * <p>
+ * Note: Setting the clock interval to zero will
+ * invoke the listeners <code>onTick()</code>
+ * method as fast as possible.
+ * </p>
+ * @author tobias.gierke@code-sourcery.de
+ */
 class Clock(private val caller : ClockListener ) 
 {
 	    private val LOCK : AnyRef = new Object()
 		
-	    private val tickInterval = new AtomicInteger(100)
+	    private val tickIntervalInMillis = new AtomicInteger(100)
 		
 		// @GuardedBy( LOCK )
 		private var clock : Option[ClockThread]= None
 		
+		/**
+		 * Implements the actual clock
+		 * and notifies listeners of clock ticks
+		 * and state changes. 
+		 */
 		private class ClockThread extends Thread {
 			
 			val stopRequested  = new AtomicBoolean(false)
@@ -26,7 +41,7 @@ class Clock(private val caller : ClockListener )
 						if ( ! caller.onTick() ) {
 							terminate()
 						} else {
-							val delay = tickInterval.get
+							val delay = tickIntervalInMillis.get
 							if ( delay > 0 ) {
 								java.lang.Thread.sleep( delay )
 							}
@@ -48,32 +63,53 @@ class Clock(private val caller : ClockListener )
 			}
 		}
 		
+	    /**
+	     * Stops this clock.
+	     * 
+	     * If the clock isn't running, nothing
+	     * harmful happens.
+	     */
 		def stop() = {
 			
 			val existingThread = LOCK.synchronized 
 			{
-				if ( clock.isDefined ){
-					val tmp = clock.get
-					tmp.terminate()
-					clock = None
-					Some(tmp)
-				} else {
-					None
+				clock match {
+					case Some(tmp ) => {
+						tmp.terminate()
+						clock = None
+						Some(tmp)
+					}
+					case _ => None
 				}
 			}
-			
+			// call from outside synchronized block
 			if ( existingThread.isDefined ) {
 				existingThread.get.waitForDeath()
 			}
 		}
 		
-		def getTickInterval : Int = tickInterval.get
+		/**
+		 * Returns this clock's tick interval in milliseconds.
+		 * @return
+		 */
+		def tickIntervalMillis : Int = tickIntervalInMillis.get
 		
-		def setTickInterval( milliseconds : Int ) {
+		/**
+		 * Sets this clock's tick interval in milliseconds.
+		 * 
+		 * @param milliseconds
+		 */
+		def tickIntervalMillis_=( milliseconds : Int ) {
 			require( milliseconds >= 0 )
-			tickInterval.set( milliseconds )
+			tickIntervalInMillis.set( milliseconds )
 		}
 			
+		/**
+		 * Starts this clock.
+		 * 
+	     * If the clock is already running, nothing
+	     * harmful happens.		 
+		 */
 		def start() {
 			LOCK.synchronized {
 				clock match {

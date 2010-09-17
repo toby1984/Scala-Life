@@ -3,9 +3,10 @@ package de.codesourcery.life.entities
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * A bitfield.
- *  
- * @param b
+ * A torus that holds boolean values and uses a bitfield as it's underlying
+ * storage.
+ * 
+ * @author Tobias.Gierke@code-sourcery.de
  */
 class BitfieldTorus( private val data : TwoDimensionalStorage[Boolean] ) extends Torus[Boolean](data) {
 

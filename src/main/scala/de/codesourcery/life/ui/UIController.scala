@@ -3,6 +3,19 @@ package de.codesourcery.life.ui
 import de.codesourcery.life.entities.Board
 import de.codesourcery.life.simulator._
 
+/**
+ * Application controller.
+ * 
+ *  <p>This class is responsible for:
+ *  <ul>
+ *    <li>Notifying the view of simulation state changes etc.</li>
+ *    <li>Reacting to messages from the view about user interaction/requests</li>
+ *    <li>Controlling the actual simulation state</li> 
+ *  </ul<
+ *   </p>
+ * 
+ * @author tobias.gierke@code-sourcery.de
+ */
 abstract class UIController(private val m : Board , private val view : View ) {
 
 	private var lastState : Option[Board] = None
@@ -24,7 +37,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 		def onTick() : Boolean = {
 			
-			val currentTime = System.currentTimeMillis
+			val currentTime  = System.currentTimeMillis
 			if (lastCall != 0 ) {
 				
 				val duration = currentTime - lastCall
@@ -34,15 +47,29 @@ abstract class UIController(private val m : Board , private val view : View ) {
 				allFps += fps
 				
 				val avgFps = ( allFps / counter )
-				println("FPS: "+avgFps)
+				if ( ( counter % 100 ) == 0 ) {
+					println("FPS: "+avgFps)
+				}
 			}
 			lastCall = currentTime
 			
+			// advance the model , stop
+			// clock by returning false
+			// if the model population
+			// no longer changes
+//			println("\n==================== BEFORE ================")
+//			model.printBoard();
+//			println("\n=== Neighbours ===");
+//			model.printNeighbourCount()
 			if ( model.advance() ) {
+//				println("\n==================== AFTER ================")		
+//				model.printBoard();
+//				println("=== Neighbours ===");
+//				model.printNeighbourCount()			
 				view.modelChanged()
 				true
 			} else {
-			false
+				false
 			}
 		}
     }
@@ -59,7 +86,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 	def speedChanged(percent:Int) {
 		val delay = Math.round( 1000.0  * ( percent / 100.0 ) )
-		clock.setTickInterval( delay.asInstanceOf[Int] )
+		clock.tickIntervalMillis = delay.asInstanceOf[Int]
 		view.simulatorSpeedChanged( delay.asInstanceOf[Int] )
 	}
 	
@@ -77,7 +104,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 		view.modelChanged()
 	}
 	
-	def getSimulationDelayInMillis() : Int = clock.getTickInterval
+	def getSimulationDelayInMillis() : Int = clock.tickIntervalMillis
 	
 	def saveStateClicked() {
 		stopButtonClicked()
@@ -136,5 +163,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	// constructor code
 	speedChanged(50)
 	view.setController( this ) // this escapes constructor...
+	print("Initializing view...")
 	view.modelChanged()
+	println("Ok")
 }

@@ -3,8 +3,14 @@ package de.codesourcery.life
 import de.codesourcery.life.entities.Board
 import de.codesourcery.life.ui.UIController
 import de.codesourcery.life.ui.LifeFrame
+import de.codesourcery.life.ui.TracingRepaintManager
 import javax.swing.SwingUtilities
 
+/** 
+ * Application entry point (commandline class).
+ *  
+ * @author Tobias.Gierke@code-sourcery.de
+ */
 object Main{
 
 	private def initModel(board:Board) : Board = {
@@ -15,16 +21,26 @@ object Main{
 	
 	def main( args : Array[String] ) 
 	{
-			val model = initModel( Board( 100 , 100 ) )
-			
-//			var time = -System.currentTimeMillis
-//			var i = 1600
-//			while ( i > 0 ) {
-//				model.advance
-//				i-=1
+		
+//		javax.swing.RepaintManager.setCurrentManager( new TracingRepaintManager() )
+//		
+//		java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(  new java.awt.event.AWTEventListener() {
+//			def eventDispatched( ev : java.awt.AWTEvent ) {
+//				println("Received "+ev)
 //			}
-//			time += System.currentTimeMillis
-//			println("Time: "+time)
+//		} 
+//		, 0xffffffffffffffffL | java.awt.AWTEvent.INVOCATION_EVENT_MASK );
+		
+		val model = initModel( Board( 100 , 100 ) )
+			
+//		var time = -System.currentTimeMillis
+//		var i = 1600
+//		while ( i > 0 ) {
+//			model.advance
+//			i-=1
+//		}
+//		time += System.currentTimeMillis
+//		println("Time: "+time)
 			
 			val view = new LifeFrame()
 			view.setVisible( true )
