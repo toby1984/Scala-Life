@@ -89,7 +89,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @return a valid array index into the X (width) array
 	 */
 	private def realX(x:Int) = {
-		val result = x % width
+		val result = x % (width-1)
 		if ( result >= 0 ) {
 			result
 		} else {
@@ -112,7 +112,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @return a valid array index into the Y (height) array
 	 */	
 	private def realY(y:Int) = {
-		val result = y % height
+		val result = y % (height-1)
 		if ( result >= 0 ) {
 			result
 		} else {
@@ -138,6 +138,12 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 		this
 	}
 	
+	def resize(newWidth:Int,newHeight:Int) {
+		require( newWidth > 0 )
+		require( newHeight > 0 )
+		setData( getData().createCopy( newWidth , newHeight ) )
+	}
+		
 	/**
 	 * Returns the value at given X-Y coordinate.
 	 * 
@@ -159,6 +165,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @param func
 	 */
 	def visitAll( func : => (Int,Int,T) => Unit ) {
+		println("Torus#visitAll(): "+width+" x "+height)
 		visit( 0 , 0 , width-1 , height - 1 , func )
 	}
 	
@@ -180,6 +187,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 */
 	def visit(startX:Int,startY:Int,endX:Int,endY:Int, func : => (Int,Int,T) => Unit ) {
 
+		println("Visit( "+startX+" , "+startY+" ) => ( "+endX+" , "+endY+" )")
 		var currentY = startY
 		while ( currentY <= endY ) {
 			
@@ -187,7 +195,10 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 			
 			var currentX = startX
 			while( currentX <= endX ) {
-				func( currentX , currentY , data.getValueAt( realX( currentX ) , convertedY ) )
+				val convertedX =
+					realX( currentX ) 
+				println(" ( "+currentX+", "+currentY+" ) => ( "+convertedX+" , "+convertedY+")")
+				func( currentX , currentY , data.getValueAt( convertedX, convertedY ) )
 				currentX += 1
 			}
 			currentY +=1

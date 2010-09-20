@@ -39,4 +39,12 @@ abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
 	 */
 	def createCopy() : TwoDimensionalStorage[T]
 	
+	/**
+	 * Creates an independent copy of this
+	 * instance with a specific size.
+	 * 
+	 * @return
+	 */
+	def createCopy(width:Int,height:Int) : TwoDimensionalStorage[T]	
+	
 }

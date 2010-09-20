@@ -10,6 +10,7 @@ import java.awt.GridBagConstraints
 import java.awt.event._
 import javax.swing.JFileChooser
 import javax.swing.SwingUtilities
+import javax.swing.JLabel
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JSlider
@@ -86,6 +87,8 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			
 			val drawGrid = true
 			
+			println("Painting "+model.width+" x "+model.height+" board")
+  		    
 			val stepX = maxX.asInstanceOf[Float] / model.width.asInstanceOf[Float] 
 			val stepY = maxY.asInstanceOf[Float] / model.height.asInstanceOf[Float] 
 			
@@ -116,8 +119,8 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 						graphics.fillRect( 
 								(x1+2).asInstanceOf[Int] , 
 								(y1+2).asInstanceOf[Int],
-								(stepX-3).asInstanceOf[Int] , 
-								(stepY-3).asInstanceOf[Int] )
+								(stepX-2).asInstanceOf[Int], 
+								(stepY-2).asInstanceOf[Int])
 					}
 				}
 			}
@@ -158,11 +161,55 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		setEditable( false )
 	}
 	
+	private[this] val modelSizeChangeListener : java.awt.event.ActionListener = new java.awt.event.ActionListener() {
+		
+		def actionPerformed(ev:ActionEvent) {
+			val source = ev.getSource
+			if ( source == modelWidth || source == modelHeight ) {
+				
+				var w = model.width
+				var h = model.height
+				
+				def reset() {
+					w = model.width
+					h = model.height
+					modelWidth.setText( w.toString )						
+					modelHeight.setText( h.toString )
+				}
+				
+				try {
+					w = modelWidth.getText.toInt
+					h = modelHeight.getText.toInt
+					if ( h <= 0 || w <= 0 ) {
+						reset()
+						return
+					}					
+				} catch {
+					case _ => {
+						reset()
+						return
+					}
+				}
+				if ( controller.isDefined ) {
+					controller.get.modelResizeRequested(w,h)
+				}				
+			}
+		}
+	}	
+	
+	private[this] val modelWidth = new javax.swing.JTextField() {
+		addActionListener( modelSizeChangeListener )
+	}
+	
+	private[this] val modelHeight = new javax.swing.JTextField() {
+		addActionListener( modelSizeChangeListener )
+	}
+	
 	private[this] val loadFromFileButton = new JButton("Load...")
 	private[this] val saveToFileButton = new JButton("Save...")
 	
 	private[this] val clearButton = new JButton("Clear")
-	private[this] val startButton = new JButton("Start...")
+	private[this] val startButton = new JButton("Start")
 	private[this] val stopButton = new JButton("Stop") {
 		setEnabled( false )
 	}
@@ -347,19 +394,25 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		val leftPanel = new JPanel()
 		leftPanel.setLayout( new GridBagLayout )
 		
-		leftPanel.add( startButton , constraints(0,1).fillHorizontal().build() )
-		leftPanel.add( clearButton , constraints(0,2).fillHorizontal().build() )
-		leftPanel.add( saveStateButton , constraints(0,3).fillHorizontal().build() )
-		leftPanel.add( loadFromFileButton , constraints(0,4).fillHorizontal().build() )
+		leftPanel.add( new JLabel("Width") , constraints(0,1).fillHorizontal().build() )
+		leftPanel.add( modelWidth , constraints(0,2).fillHorizontal().build() )
+		
+		leftPanel.add( startButton , constraints(0,3).fillHorizontal().build() )
+		leftPanel.add( clearButton , constraints(0,4).fillHorizontal().build() )
+		leftPanel.add( recallStateButton , constraints(0,5).fillHorizontal().build() )
+		leftPanel.add( loadFromFileButton , constraints(0,6).fillHorizontal().build() )
 		
 		// right panel
 		val rightPanel = new JPanel()
 		rightPanel.setLayout( new GridBagLayout )
 		
-		rightPanel.add( stopButton , constraints(0,0).fillHorizontal().build() )
-		rightPanel.add( resetButton , constraints(0,1).fillHorizontal().build() )
-		rightPanel.add( recallStateButton , constraints(0,2).fillHorizontal().build() )
-		rightPanel.add( saveToFileButton , constraints(0,3).fillHorizontal().build() )
+		rightPanel.add( new JLabel("Height") , constraints(0,1).fillHorizontal().build() )
+		rightPanel.add( modelHeight, constraints(0,2).fillHorizontal().build() )
+		
+		rightPanel.add( stopButton , constraints(0,3).fillHorizontal().build() )
+		rightPanel.add( resetButton , constraints(0,4).fillHorizontal().build() )
+		rightPanel.add( saveStateButton , constraints(0,5).fillHorizontal().build() )
+		rightPanel.add( saveToFileButton , constraints(0,6).fillHorizontal().build() )
 		
 		val subPanel = new JPanel()
 		subPanel.setLayout( new GridBagLayout )
@@ -380,6 +433,8 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	}
 	
 	def modelChanged() {
+		modelWidth.setText( model.width.toString )
+		modelHeight.setText( model.height.toString )
 		drawPanel.repaint()
 	}
 	
@@ -392,7 +447,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	wrapper.add( controlPanel , constraints(0,0).relWidth(0.1).build() )
 	
 	drawPanel.setBorder(javax.swing.BorderFactory.createLineBorder( java.awt.Color.RED ) )
-	wrapper.add( drawPanel , constraints(1,0).relWidth(0.8).build() )
+	wrapper.add( drawPanel , constraints(1,0).relWidth(0.9).build() )
 	
 	getContentPane().setLayout( new GridBagLayout() )
 	getContentPane().add( wrapper , constraints(0,0).build() )

@@ -52,4 +52,20 @@ private class ArrayStorage[T](val w:Int,val h:Int) extends TwoDimensionalStorage
 	 		}
 	 		result
 	}
+	
+	def createCopy(newWidth:Int,newHeight:Int) : TwoDimensionalStorage[T] = {
+	 		val result = new ArrayStorage[T]( newWidth , newHeight )
+	 		var width = 0
+	 		
+	 		val maxWidth = if ( w <= newWidth) w else newWidth
+	 		val minHeight = if ( h <= newHeight ) h else newHeight
+	 		while( width < maxWidth ) {
+	 			if ( data(width) != null ) {
+	 				result.data(width) = new Array[Any]( newHeight )
+	 				Array.copy( data(width) , 0 , result.data(width) , 0, minHeight )
+	 			}
+	 			width+=1
+	 		}
+	 		result
+	}	
 }

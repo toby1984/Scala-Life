@@ -116,6 +116,15 @@ abstract class UIController(private val m : Board , private val view : View ) {
 		}
 	}
 	
+	def modelResizeRequested(width:Int,height:Int) {
+		updateBoard {
+			if ( width != model.width || height != model.height ) {
+				model.resize( width , height )
+				view.modelChanged
+			}
+		}
+	}
+	
 	def cellClicked(x:Int,y:Int) {
 		updateBoard {
 			if ( model.isAlive( x , y ) ) {

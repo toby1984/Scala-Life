@@ -78,6 +78,12 @@ class Board private (private var torus : Torus[Boolean] ) {
 		result
 	}
 	
+	def resize(newWidth:Int,newHeight:Int) {
+		require( newWidth > 0 )
+		require( newHeight > 0 )
+		torus.resize( newWidth , newHeight )
+	}
+	
 	def printBoard() {
 		visitAll( { (x , y , isSet ) => {
 			if ( x == 0 ) {
