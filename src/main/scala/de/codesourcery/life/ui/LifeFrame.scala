@@ -5,6 +5,8 @@ import de.codesourcery.life.entities.Board
 import java.awt.font._
 import java.awt.FlowLayout
 import java.awt.BorderLayout
+import java.awt.GridBagLayout
+import java.awt.GridBagConstraints
 import java.awt.event._
 import javax.swing.JFileChooser
 import javax.swing.SwingUtilities
@@ -72,40 +74,35 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			var maxX  = getWidth
 			var maxY = getHeight 
 		
-			val stepX : Int = Math.floor( maxX / board.width ).asInstanceOf[Int]
-		    val stepY : Int = Math.floor( maxY / board.height ).asInstanceOf[Int]
-            ( x / stepX , y / stepY )
+			val stepX = maxX.asInstanceOf[Float] / board.width.asInstanceOf[Float] 
+		    val stepY = maxY.asInstanceOf[Float]  / board.height.asInstanceOf[Float]  
+            ( (x / stepX).asInstanceOf[Int]  , (y / stepY).asInstanceOf[Int]  )
 	    }
 	
-		private[this] val paintFunction : java.awt.Graphics => Unit =  graphics => 
+		private def paintFunction( graphics : java.awt.Graphics)
 		{
-			var maxX  = getWidth
-			var maxY = getHeight 
+  		    var maxX  = getWidth
+		    var maxY = getHeight 
 			
 			val drawGrid = true
 			
-			val board = model
-			
-			val stepX : Int = Math.floor( maxX / board.width ).asInstanceOf[Int]
-			val stepY : Int = Math.floor( maxY / board.height ).asInstanceOf[Int]
-			
-			maxX = stepX * board.width
-			maxY = stepY * board.height
+			val stepX = maxX.asInstanceOf[Float] / model.width.asInstanceOf[Float] 
+			val stepY = maxY.asInstanceOf[Float] / model.height.asInstanceOf[Float] 
 			
 			// draw grid
 			val oldColor = graphics.getColor
 			graphics.setColor( java.awt.Color.black )
 			
 			if ( drawGrid ) {
-				var x : Int = 0;
+				var x : Float = 0.0f;
 				while( x <= maxX ) {
-					graphics.drawLine( x , 0 , x  , maxY )
+					graphics.drawLine( x.asInstanceOf[Int] , 0 , x.asInstanceOf[Int]  , maxY )
 					x += stepX
 				}
 				
-				var y : Int = 0;
+				var y : Float = 0;
 				while( y <= maxY) {
-					graphics.drawLine( 0 , y , maxX , y )
+					graphics.drawLine( 0 , y.asInstanceOf[Int] , maxX , y.asInstanceOf[Int] )
 					y += stepY
 				}
 			}
@@ -114,19 +111,19 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			val drawFunction : (Int,Int,Boolean) => Unit = {
 				( x , y , isSet ) => {
 					if ( isSet ) {
-						val x1 : Int = x * stepX
-						val y1 : Int = y * stepY
+						val x1 : Float = x * stepX
+						val y1 : Float = y * stepY
 						graphics.fillRect( 
-								x1+2 , 
-								y1+2,
-								stepX-3 , 
-								stepY-3 )
+								(x1+2).asInstanceOf[Int] , 
+								(y1+2).asInstanceOf[Int],
+								(stepX-3).asInstanceOf[Int] , 
+								(stepY-3).asInstanceOf[Int] )
 					}
 				}
 			}
-			board.visitAll( drawFunction )
+			model.visitAll( drawFunction )
 			
-			val text = "Generation: "+board.generation
+			val text = "Generation: "+model.generation
 			val metrics = graphics.getFontMetrics
 			val m =
 				metrics.getStringBounds( text , 0, text.length() ,  graphics )
@@ -148,7 +145,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			}
 		}	
 		
-		// drawPanel constructor
 		addMouseListener( someMouseListener )
 		addMouseMotionListener( someMouseListener )
 		
@@ -227,6 +223,81 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		}
 	}
 	
+	private class ConstraintBuilder(private val x:Int, private val y:Int) {
+		
+		private val cnstrs = new GridBagConstraints() 
+
+		cnstrs.gridx = x
+		cnstrs.gridy = y
+		cnstrs.fill = GridBagConstraints.BOTH
+		
+		cnstrs.anchor = GridBagConstraints.CENTER
+		cnstrs.insets = new java.awt.Insets(5,5,5,5) // top-left-bottom-right
+		
+		cnstrs.ipadx = 0
+		cnstrs.ipady = 0
+		cnstrs.weightx = 0.5
+		cnstrs.weighty = 0.5
+		
+		cnstrs.gridheight = 1
+		cnstrs.gridwidth = 1	
+	
+		def build() = cnstrs;
+		
+		def onlyYInsets() = {
+			cnstrs.insets = new java.awt.Insets(5,0,5,0) // top-left-bottom-right	
+			this
+		}
+		
+		def anchorLeft() = {
+			cnstrs.anchor = GridBagConstraints.WEST
+			this
+		}
+		
+		def anchorRight() = {
+			cnstrs.anchor = GridBagConstraints.EAST
+			this
+		}
+		
+		def noInsets() = {
+			cnstrs.insets = new java.awt.Insets(0,0,0,0)
+			this
+		}
+		def noFill() = {
+			cnstrs.fill = GridBagConstraints.NONE
+			this
+		}
+		
+		def relWidth(relWidth:Double) = {
+			cnstrs.weightx=relWidth
+			this
+		}
+		
+		def noResizing() = {
+			cnstrs.weightx = 0.0
+			cnstrs.weighty = 0.0
+			this
+		}
+		
+		def width(width:Int) = {
+			cnstrs.gridwidth = width
+			this
+		}
+		
+		def fillVertical() = {
+			cnstrs.fill = GridBagConstraints.VERTICAL
+			this
+		}		
+		
+		def fillHorizontal() = {
+			cnstrs.fill = GridBagConstraints.HORIZONTAL
+			this
+		}
+		
+	}
+	
+	private def constraints(x:Int,y:Int) : ConstraintBuilder = new ConstraintBuilder(x,y)
+	
 	def querySaveFileName() : Option[String] = showFileChooser( true )
 		
 	def queryLoadFileName() : Option[String] = showFileChooser( false )
@@ -263,8 +334,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			}
 		}
 		
-		setLayout(new FlowLayout() )
-		
 		startButton.addActionListener( listener )
 		stopButton.addActionListener( listener )
 		clearButton.addActionListener( listener )
@@ -273,30 +342,59 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		recallStateButton.addActionListener( listener )		
 		loadFromFileButton.addActionListener( listener )
 		saveToFileButton.addActionListener( listener )
+
+		// left panel
+		val leftPanel = new JPanel()
+		leftPanel.setLayout( new GridBagLayout )
 		
-		add( new javax.swing.JLabel( "Simulation delay" ) )
-		add( simulatorDelay )
-		add( speedDial )
-		add( startButton )
-		add( stopButton )
-		add( clearButton )
-		add( resetButton )
-		add( saveStateButton )
-		add( recallStateButton )
-		add( loadFromFileButton )
-		add( saveToFileButton )
+		leftPanel.add( startButton , constraints(0,1).fillHorizontal().build() )
+		leftPanel.add( clearButton , constraints(0,2).fillHorizontal().build() )
+		leftPanel.add( saveStateButton , constraints(0,3).fillHorizontal().build() )
+		leftPanel.add( loadFromFileButton , constraints(0,4).fillHorizontal().build() )
+		
+		// right panel
+		val rightPanel = new JPanel()
+		rightPanel.setLayout( new GridBagLayout )
+		
+		rightPanel.add( stopButton , constraints(0,0).fillHorizontal().build() )
+		rightPanel.add( resetButton , constraints(0,1).fillHorizontal().build() )
+		rightPanel.add( recallStateButton , constraints(0,2).fillHorizontal().build() )
+		rightPanel.add( saveToFileButton , constraints(0,3).fillHorizontal().build() )
+		
+		val subPanel = new JPanel()
+		subPanel.setLayout( new GridBagLayout )
+		subPanel.add( leftPanel, constraints(0,0).build() )
+		subPanel.add( rightPanel, constraints(1,0).build() )
+		
+		setLayout(new GridBagLayout() )
+		
+		val topPanel = new JPanel()
+		topPanel.setLayout(new GridBagLayout() )
+		
+		topPanel.add( new javax.swing.JLabel( "Simulation delay" ) , constraints(0,0).anchorLeft().noFill().build() )
+		topPanel.add( simulatorDelay , constraints( 1, 0 ).anchorRight().fillHorizontal().build() )
+		topPanel.add( speedDial , constraints(0,1).fillHorizontal().width(2).build() )
+		
+		add( topPanel , constraints(0,1).noFill.noResizing.build() )
+		add( subPanel , constraints(0,2).width(2).noResizing.noFill.build() )
 	}
 	
 	def modelChanged() {
 		drawPanel.repaint()
 	}
 	
+	
 	setDefaultCloseOperation(  javax.swing.JFrame.EXIT_ON_CLOSE )
 	
 	private[this] val wrapper = new JPanel
-	wrapper.setLayout( new BorderLayout() )
-	wrapper.add( controlPanel , BorderLayout.NORTH )
-	wrapper.add( drawPanel , BorderLayout.CENTER )
-	getContentPane().add( wrapper )
+	wrapper.setLayout( new GridBagLayout() )
+	
+	wrapper.add( controlPanel , constraints(0,0).relWidth(0.1).build() )
+	
+	drawPanel.setBorder(javax.swing.BorderFactory.createLineBorder( java.awt.Color.RED ) )
+	wrapper.add( drawPanel , constraints(1,0).relWidth(0.8).build() )
+	
+	getContentPane().setLayout( new GridBagLayout() )
+	getContentPane().add( wrapper , constraints(0,0).build() )
 	pack()
 }

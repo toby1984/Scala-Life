@@ -57,15 +57,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 			// clock by returning false
 			// if the model population
 			// no longer changes
-//			println("\n==================== BEFORE ================")
-//			model.printBoard();
-//			println("\n=== Neighbours ===");
-//			model.printNeighbourCount()
 			if ( model.advance() ) {
-//				println("\n==================== AFTER ================")		
-//				model.printBoard();
-//				println("=== Neighbours ===");
-//				model.printNeighbourCount()			
 				view.modelChanged()
 				true
 			} else {
