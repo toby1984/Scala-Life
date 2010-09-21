@@ -24,8 +24,8 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 	// number of bits per array element
 	private val ARRAY_ELEMENT_BIT_WIDTH = 32
 	
-	// I use shift operations instead of divide / multiply here
-	private val SHIFT_BITCOUNT = 6 // = 2^6 = 32 
+	// I use shift operations instead of divide / multiply
+	private val SHIFT_BITCOUNT = 5 // = 2^5 = 32 
 	
 	private val paddedWidth : Int =  if ( ( w % ARRAY_ELEMENT_BIT_WIDTH ) != 0 ) {
 		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
@@ -47,22 +47,21 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 	def getValueAt(x:Int,y:Int) : Boolean = {
 		
 		val bitOffset : Int = x + y* paddedWidth
-		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
-		val offsetInByte : Int = bitOffset -( byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
+		val byteOffset : Int = bitOffset >>> SHIFT_BITCOUNT //   read: bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
+		val offsetInByte : Int = bitOffset - ( byteOffset  << SHIFT_BITCOUNT ) // read: byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
 		
-		return ( data(byteOffset) & 1 << offsetInByte ) != 0
+		return ( data(byteOffset) & ( 1 << offsetInByte ) ) != 0
 	}
 	
 	def setValueAt(x:Int,y:Int,value:Boolean) {
 		
 		val bitOffset : Int = x + y* paddedWidth
-		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
-		val offsetInByte : Int = bitOffset -( byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
+		val byteOffset : Int = bitOffset >>> SHIFT_BITCOUNT //   read: bitOffset / ARRAY_ELEMENT_BIT_WIDTH
+		val offsetInByte : Int = bitOffset - ( byteOffset  << SHIFT_BITCOUNT ) // read: byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
 		
 		if ( value ) { // set bit
 			data(byteOffset) = ( data(byteOffset) | 1 << offsetInByte)
 		} else { // clear bit
-			// val mask = ALL_ONES_MASK - ( 1 << offsetInByte )
 			data(byteOffset) = (data(byteOffset) & ~(1 << offsetInByte) )
 		}
 	}
