@@ -164,7 +164,5 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	// constructor code
 	speedChanged(50)
 	view.setController( this ) // this escapes constructor...
-	print("Initializing view...")
 	view.modelChanged()
-	println("Ok")
 }

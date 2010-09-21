@@ -21,43 +21,55 @@ class BitfieldTorus( private val data : TwoDimensionalStorage[Boolean] ) extends
 
 private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean](w,h) {
 	
-	private var data = {
-		val len = calcLength(w,h )
-		println("Created array with len "+len)
-		new Array[Byte]( len )
+	// number of bits per array element
+	private val ARRAY_ELEMENT_BIT_WIDTH = 32
+	
+	// bit-mask with only 1s (length must match ARRAY_ELEMENT_BIT_WIDTH)
+	private val ALL_ONES_MASK = 0xffffffff
+	
+	private val paddedWidth : Int =  if ( ( w % ARRAY_ELEMENT_BIT_WIDTH ) != 0 ) {
+		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
+		tmp * ARRAY_ELEMENT_BIT_WIDTH
+	} else {
+		height 
 	}
 	
+	private var data : Array[Int]= new Array[Int]( calcLength(w,h ) )
+	
 	def calcLength(aWidth : Int, aHeight : Int ) : Int = {
-		val paddedHeight :Int = (Math.ceil( aHeight / 8.0 ) * 8.0).asInstanceOf[Int]
-		val result : Int = ( ( aWidth * paddedHeight ) / 8 ) + 2
-		println("Bitfield length: "+result+" ("+aWidth+" x "+aHeight+" )")
-		result
+		Math.ceil( ( aHeight * paddedWidth ) / ARRAY_ELEMENT_BIT_WIDTH ).asInstanceOf[Int]
+	}
+	
+	private def calcArrayPosition(x:Int,y:Int) : (Int,Int) = {
+		val bitOffset : Int = x + y* paddedWidth
+		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
+		val offsetInByte : Int = bitOffset -( byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
+		return ( byteOffset , offsetInByte )
 	}
 	
 	def getValueAt(x:Int,y:Int) : Boolean = {
-		val bitOffset : Int = y*h + x
-		val byteOffset : Int = bitOffset / 8 
-		val offsetInByte : Int = bitOffset -( byteOffset << 3 )
+		
+		val ( byteOffset ,offsetInByte ) = calcArrayPosition(x,y)
 		try {
 			return ( data(byteOffset) & 1 << offsetInByte ) != 0
 		} catch {
 			case ex : ArrayIndexOutOfBoundsException => {
-				throw new IllegalArgumentException("Invalid get() access at "+x+" , "+y+
-						"( byteoffset "+byteOffset+", bitoffset "+bitOffset+", bit = "+offsetInByte+" )")
+				throw new IllegalArgumentException("\nArray: "+w+"x"+h+" of len "+data.length+"\nInvalid get("+x+" / "+y+") access at "+
+						" byteoffset "+byteOffset+", bit = "+offsetInByte)
 			}
 			case x: Throwable => throw x 
 		}
 	}
 	
 	def setValueAt(x:Int,y:Int,value:Boolean) {
-		val bitOffset : Int = x+y*h
-		val byteOffset : Int = ( bitOffset / 8 )
-		val offsetInByte : Int = bitOffset-( byteOffset * 8 )
-		if ( value ) {
-			data(byteOffset) = ( data(byteOffset) | 1 << offsetInByte).asInstanceOf[Byte]
-		} else {
-			val mask = 255 - ( 1 << offsetInByte )
-			data(byteOffset) = (data(byteOffset) & mask).asInstanceOf[Byte]
+		
+		val ( byteOffset ,offsetInByte ) = calcArrayPosition(x,y)
+				
+		if ( value ) { // set bit
+			data(byteOffset) = ( data(byteOffset) | 1 << offsetInByte)
+		} else { // clear bit
+			val mask = ALL_ONES_MASK - ( 1 << offsetInByte )
+			data(byteOffset) = (data(byteOffset) & mask)
 		}
 	}
 	 
@@ -68,11 +80,10 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 	}
 	
 	def createCopy(newWidth:Int,newHeight:Int) : TwoDimensionalStorage[Boolean] = {
-		println("createCopy( "+newWidth+","+newHeight+")")
-	 		val result = new BitfieldStorage( newWidth , newHeight )
-	 		val newLength = calcLength(newWidth,newHeight)
-	 		val maxLength = if ( data.length <= newLength ) data.length else newLength  
-	 		Array.copy( data , 0 , result.data , 0 , maxLength )
-	 		result
+
+ 		val result = new BitfieldStorage( newWidth , newHeight )
+ 		val maxLength = if ( result.data.length <= data.length ) result.data.length else data.length  
+ 		Array.copy( data , 0 , result.data , 0 , maxLength )
+ 		result
 	}	
 }

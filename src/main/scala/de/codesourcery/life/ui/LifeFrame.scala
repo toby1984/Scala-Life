@@ -87,8 +87,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			
 			val drawGrid = true
 			
-			println("Painting "+model.width+" x "+model.height+" board")
-  		    
 			val stepX = maxX.asInstanceOf[Float] / model.width.asInstanceOf[Float] 
 			val stepY = maxY.asInstanceOf[Float] / model.height.asInstanceOf[Float] 
 			
@@ -226,7 +224,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	}
 	
 	private def updateSimulatorSpeed( delayInMillis : Int ) {
-		println("---new simulator speed: "+delayInMillis+"---")
 		simulatorDelay.setText( delayInMillis+" ms" )						
 	}
 	
@@ -445,8 +442,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	wrapper.setLayout( new GridBagLayout() )
 	
 	wrapper.add( controlPanel , constraints(0,0).relWidth(0.1).build() )
-	
-	drawPanel.setBorder(javax.swing.BorderFactory.createLineBorder( java.awt.Color.RED ) )
 	wrapper.add( drawPanel , constraints(1,0).relWidth(0.9).build() )
 	
 	getContentPane().setLayout( new GridBagLayout() )
