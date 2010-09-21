@@ -34,8 +34,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	private var neighbourCountMap : Option[Torus[Int]] = None
 
-	var debug = false
-	
 	/**
 	 * Creates a game board with a given
 	 * size.
@@ -192,10 +190,15 @@ class Board private (private var torus : Torus[Boolean] ) {
 			val map = neighbourCountMap.get
 			val increment = if ( alive ) 1 else -1
 			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
-				val value = map.get( currentX ,currentY )
-				println("Visit ("+currentX+","+currentY+") is_set = "+isSet+" , value = "+value)
-				if ( isSet && (currentX != x || currentY != y ) ) {
-					map.set( currentX , currentY , value + increment )
+				if ( currentX != x || currentY != y ) {
+					val value = map.get( currentX ,currentY )
+					var newValue = value + increment
+					if ( newValue < 0 ) {
+						newValue=0
+					}
+					if ( value != newValue ) {
+						map.set( currentX , currentY , newValue )
+					}
 				}
 			}
 			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
@@ -204,12 +207,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 			// calculate neighbour count map 
 			// because it's not set yet
 			getNeighbourCountMap()
-		}
-		
-		if ( debug ) {
-			println("\n\n================ SET ( "+x+" / "+y+" ) to "+alive+" ===================")
-			printBoard()
-			printNeighbourCount()
 		}
 		
 		this
@@ -242,10 +239,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		if ( neighbourCountMap.isDefined ) {
 			return neighbourCountMap.get
-		}
-		
-		if ( debug ) {
-			println("=== creating neightbour count map ===")
 		}
 		
 		// calculate neighbour count once 
@@ -309,7 +302,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		val neighbourCount = getNeighbourCountMap()
 		
 		// apply the rules to a new board
-		val newBoard = Board.createTorus(width,height)
+		val newBoard = new Board( Board.createTorus(width,height) )
 		
 		var isStable = true // set to false if at least one cell dies or comes alive
 		
@@ -322,21 +315,23 @@ class Board private (private var torus : Torus[Boolean] ) {
 			val count = neighbourCount.get( x ,y )
 			
 			if ( isAlive && ( count < 2 || count > 3 ) ) {
-				newBoard.set( x , y , false ) // cell dies
+				// cell dies (and since the new board is initially empty, we don't need to do a thing here)
 				isStable = false
 			} else if ( ! isAlive && count == 3 ) {
 				newBoard.set( x , y , true ) // cell comes to life
 				isStable = false
 			} else if ( isAlive ) { // cell stays the same
 				newBoard.set( x , y , true )
-			}
+			} // } else { /* cell stays dead */ }
 			
 		}
 		
 		torus.visitAll( lifeFunction )
 		
 		// advance to next generation
-		torus = newBoard
+		torus = newBoard.torus
+		neighbourCountMap  = newBoard.neighbourCountMap
+		
 		currentGeneration += 1
 		
 		return ! isStable

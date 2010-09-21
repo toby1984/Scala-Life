@@ -21,11 +21,11 @@ object Main{
 	
 	def main( args : Array[String] ) 
 	{
-		val board2 = Board(10,10)
-		board2.debug = true
-		board2.set( 2 , 1 )
-		board2.set( 2, 2 )
-		System.exit(0);
+//		val board2 = Board(10,10)
+//		board2.debug = true
+//		board2.set( 2 , 1 )
+//		board2.set( 2, 2 )
+//		System.exit(0);
 				
 //		javax.swing.RepaintManager.setCurrentManager( new TracingRepaintManager() )
 //		
