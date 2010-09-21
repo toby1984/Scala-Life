@@ -35,8 +35,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 	/**
 	 * Creates a game board with a given
 	 * size.
-	 * 
-	 * 
 	 */
 	def this( w:Int , h:Int) {
 		this( Board.createTorus(w,h) )
@@ -198,13 +196,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	def isAlive(x:Int,y:Int) : Boolean = torus.get( x , y)
 	
-	/**
-	 * Advances the simulation to the next generation.
-	 * 
-	 * @return <code>true</code> if the new population is different from the previous one
-	 */
-	def advance() : Boolean = {
-		
+	def getNeighbourCountMap() : Torus[Int] = {
 		// calculate neighbour count once 
 		// for each field and store those
 		// in a two-dimensional array
@@ -214,6 +206,17 @@ class Board private (private var torus : Torus[Boolean] ) {
 			neighbourCount.set( x , y , getNeighbourCount( x , y ) )
 		}
 		torus.visitAll( countFunction )
+		neighbourCount
+	}
+	
+	/**
+	 * Advances the simulation to the next generation.
+	 * 
+	 * @return <code>true</code> if the new population is different from the previous one
+	 */
+	def advance() : Boolean = {
+		
+		val neighbourCount = getNeighbourCountMap()
 		
 		// apply the rules to a new board
 		val newBoard = Board.createTorus(width,height)
