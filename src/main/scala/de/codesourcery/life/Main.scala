@@ -21,39 +21,15 @@ object Main{
 	
 	def main( args : Array[String] ) 
 	{
-//		val board2 = Board(10,10)
-//		board2.debug = true
-//		board2.set( 2 , 1 )
-//		board2.set( 2, 2 )
-//		System.exit(0);
-				
-//		javax.swing.RepaintManager.setCurrentManager( new TracingRepaintManager() )
-//		
-//		java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(  new java.awt.event.AWTEventListener() {
-//			def eventDispatched( ev : java.awt.AWTEvent ) {
-//				println("Received "+ev)
-//			}
-//		} 
-//		, 0xffffffffffffffffL | java.awt.AWTEvent.INVOCATION_EVENT_MASK );
-		
 		val model = initModel( Board( 100 , 100 ) )
 			
-//		var time = -System.currentTimeMillis
-//		var i = 1600
-//		while ( i > 0 ) {
-//			model.advance
-//			i-=1
-//		}
-//		time += System.currentTimeMillis
-//		println("Time: "+time)
-			
-			val view = new LifeFrame()
-			view.setVisible( true )
-			
-			val controller = new UIController( model , view ) 
-			{
-				protected def initModel(b:Board) { Main.initModel( b ) }
-			}
+		val view = new LifeFrame()
+		view.setVisible( true )
+		
+		val controller = new UIController( model , view ) 
+		{
+			protected def initModel(b:Board) { Main.initModel( b ) }
+		}
 	}
 	
 }

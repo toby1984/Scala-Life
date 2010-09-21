@@ -24,8 +24,8 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 	// number of bits per array element
 	private val ARRAY_ELEMENT_BIT_WIDTH = 32
 	
-	// bit-mask with only 1s (length must match ARRAY_ELEMENT_BIT_WIDTH)
-	private val ALL_ONES_MASK = 0xffffffff
+	// I use shift operations instead of divide / multiply here
+	private val SHIFT_BITCOUNT = 6 // = 2^6 = 32 
 	
 	private val paddedWidth : Int =  if ( ( w % ARRAY_ELEMENT_BIT_WIDTH ) != 0 ) {
 		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
@@ -44,36 +44,26 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 		data = new Array[Int]( calcLength(w,h ) )
 	}
 	
-	private def calcArrayPosition(x:Int,y:Int) : (Int,Int) = {
+	def getValueAt(x:Int,y:Int) : Boolean = {
+		
 		val bitOffset : Int = x + y* paddedWidth
 		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
 		val offsetInByte : Int = bitOffset -( byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
-		return ( byteOffset , offsetInByte )
-	}
-	
-	def getValueAt(x:Int,y:Int) : Boolean = {
 		
-		val ( byteOffset ,offsetInByte ) = calcArrayPosition(x,y)
-		try {
-			return ( data(byteOffset) & 1 << offsetInByte ) != 0
-		} catch {
-			case ex : ArrayIndexOutOfBoundsException => {
-				throw new IllegalArgumentException("\nArray: "+w+"x"+h+" of len "+data.length+"\nInvalid get("+x+" / "+y+") access at "+
-						" byteoffset "+byteOffset+", bit = "+offsetInByte)
-			}
-			case x: Throwable => throw x 
-		}
+		return ( data(byteOffset) & 1 << offsetInByte ) != 0
 	}
 	
 	def setValueAt(x:Int,y:Int,value:Boolean) {
 		
-		val ( byteOffset ,offsetInByte ) = calcArrayPosition(x,y)
-				
+		val bitOffset : Int = x + y* paddedWidth
+		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
+		val offsetInByte : Int = bitOffset -( byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
+		
 		if ( value ) { // set bit
 			data(byteOffset) = ( data(byteOffset) | 1 << offsetInByte)
 		} else { // clear bit
-			val mask = ALL_ONES_MASK - ( 1 << offsetInByte )
-			data(byteOffset) = (data(byteOffset) & mask)
+			// val mask = ALL_ONES_MASK - ( 1 << offsetInByte )
+			data(byteOffset) = (data(byteOffset) & ~(1 << offsetInByte) )
 		}
 	}
 	 
