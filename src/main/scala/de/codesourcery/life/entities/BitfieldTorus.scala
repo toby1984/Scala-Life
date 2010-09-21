@@ -75,8 +75,13 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 	def createCopy(newWidth:Int,newHeight:Int) : TwoDimensionalStorage[Boolean] = {
 
  		val result = new BitfieldStorage( newWidth , newHeight )
- 		val maxLength = if ( result.data.length <= data.length ) result.data.length else data.length  
- 		Array.copy( data , 0 , result.data , 0 , maxLength )
+
+ 		val copyFunction = { (x:Int,y:Int,isSet:Boolean) => {
+ 			if ( isSet && ( x < newWidth && y < newHeight ) ) {
+ 				result.setValueAt( x , y , true )
+ 			}
+ 		} }
+ 	    visitAll( copyFunction );
  		result
 	}	
 }

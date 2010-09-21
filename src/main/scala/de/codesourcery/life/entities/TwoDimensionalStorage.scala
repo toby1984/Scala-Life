@@ -53,4 +53,25 @@ abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
 	 */
 	def clear() :Unit
 	
+	/**
+	 * Visits all elements
+	 * in this storage.
+	 *
+	 * <p>The functions gets called with x=0...width-1,y=0...height-1
+	 * (row by row).
+	 *  
+	 * @param func
+	 */
+	def visitAll( func : => (Int,Int,T) => Unit ) {
+		var y = 0
+		while ( y < height ) {
+			var x = 0
+			while( x < width ) {
+				func( x , y , getValueAt( x , y ) )
+				x += 1
+			}
+			y += 1
+		}
+	}
+	
 }

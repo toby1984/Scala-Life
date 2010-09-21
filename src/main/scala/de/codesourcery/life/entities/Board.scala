@@ -39,7 +39,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * size.
 	 */
 	def this( w:Int , h:Int) {
-		this( Board.createTorus(w,h) )
+		this( new BitfieldTorus( w,h) )
 	}
 	
 	/**
@@ -86,7 +86,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
 		torus.resize( newWidth , newHeight )
-		neighbourCountMap  = None // recalculate
+		neighbourCountMap  = None // ...needs to be recalculated
 	}
 	
 	def printBoard() {
@@ -236,7 +236,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	def getNeighbourCountMap() : Torus[Int] = 
 	{
-		
 		if ( neighbourCountMap.isDefined ) {
 			return neighbourCountMap.get
 		}
@@ -301,8 +300,8 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		val neighbourCount = getNeighbourCountMap()
 		
-		// apply the rules to a new board
-		val newBoard = new Board( Board.createTorus(width,height) )
+		// apply the rules to a new (initally empty) board
+		val newBoard = new Board( new BitfieldTorus( width,height) )
 		
 		var isStable = true // set to false if at least one cell dies or comes alive
 		
@@ -407,16 +406,4 @@ object Board {
 		board.currentGeneration = tmp.currentGeneration
 	}
 	
-	/**
-	 * Factory method for testing different implementations
-	 * of the underlying storage.
-	 * 
-	 * @param w
-	 * @param h
-	 * @return
-	 */
-	private def createTorus( w : Int  , h:Int) : Torus[Boolean] = {
-//		new AnyTorus[Boolean](w,h)
-		new BitfieldTorus(w,h)
-	}
 }

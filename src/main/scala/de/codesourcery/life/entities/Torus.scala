@@ -173,7 +173,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @param func
 	 */
 	def visitAll( func : => (Int,Int,T) => Unit ) {
-		visit( 0 , 0 , width-1 , height - 1 , func )
+		getData().visitAll( func )
 	}
 	
 	/**

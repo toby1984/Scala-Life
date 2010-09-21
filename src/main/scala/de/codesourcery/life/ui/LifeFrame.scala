@@ -114,11 +114,19 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 					if ( isSet ) {
 						val x1 : Float = x * stepX
 						val y1 : Float = y * stepY
-						graphics.fillRect( 
-								(x1+2).asInstanceOf[Int] , 
-								(y1+2).asInstanceOf[Int],
-								(stepX-2).asInstanceOf[Int], 
-								(stepY-2).asInstanceOf[Int])
+						if ( drawGrid ) {
+							graphics.fillRect( 
+									(x1+2).asInstanceOf[Int] , 
+									(y1+2).asInstanceOf[Int],
+									(stepX-2).asInstanceOf[Int], 
+									(stepY-2).asInstanceOf[Int])
+						} else {
+							graphics.fillRect( 
+								x1.asInstanceOf[Int] , 
+								y1.asInstanceOf[Int],
+								stepX.asInstanceOf[Int], 
+								stepY.asInstanceOf[Int])							
+						}
 					}
 				}
 			}
