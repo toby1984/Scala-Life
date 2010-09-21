@@ -24,7 +24,7 @@ object Main{
 		val board2 = Board(10,10)
 		board2.debug = true
 		board2.set( 2 , 1 )
-		board2.set( 1, 3 ).set( 2 , 3 ).set( 4 , 2 ).set( 5 , 3 ).set( 6 , 3 ).set( 7 , 3 )
+		board2.set( 2, 2 )
 		System.exit(0);
 				
 //		javax.swing.RepaintManager.setCurrentManager( new TracingRepaintManager() )

@@ -201,9 +201,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 			
 			var currentX = startX
 			while( currentX <= endX ) {
-				val convertedX =
-					realX( currentX ) 
-				func( currentX , currentY , data.getValueAt( convertedX, convertedY ) )
+				func( currentX , currentY , data.getValueAt( realX( currentX ), convertedY ) )				
 				currentX += 1
 			}
 			currentY +=1

@@ -176,13 +176,44 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * @return
 	 */
 	def clear(x : Int , y : Int) : Board = {
-		if ( neighbourCountMap.isDefined ) {
-			neighbourCountMap.get.clear()
-		}
-		torus.clear() // torus.set(x,y,false)
+		set(x,y,false)
 		this
 	}	
 	
+	private def set(x:Int,y:Int, alive : Boolean ) {
+		
+		torus.set(x,y,alive)
+		
+		// update neighbour count
+		// by incrementing or decrementing
+		// the count of all direct neighbours
+		
+		if ( neighbourCountMap.isDefined) {
+			val map = neighbourCountMap.get
+			val increment = if ( alive ) 1 else -1
+			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
+				val value = map.get( currentX ,currentY )
+				println("Visit ("+currentX+","+currentY+") is_set = "+isSet+" , value = "+value)
+				if ( isSet && (currentX != x || currentY != y ) ) {
+					map.set( currentX , currentY , value + increment )
+				}
+			}
+			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
+		} 
+		else {
+			// calculate neighbour count map 
+			// because it's not set yet
+			getNeighbourCountMap()
+		}
+		
+		if ( debug ) {
+			println("\n\n================ SET ( "+x+" / "+y+" ) to "+alive+" ===================")
+			printBoard()
+			printNeighbourCount()
+		}
+		
+		this
+	}
 	/**
 	 * Marks a cell at a given X-Y coordinate as being alive.
 	 * 
@@ -192,34 +223,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	def set(x : Int , y : Int) : Board = 
 	{
-		torus.set(x,y,true)
-		
-		// update neighbour count
-		// by incrementing the count of all direct
-		// neighbours
-		if ( neighbourCountMap.isDefined) {
-			val map = neighbourCountMap.get
-			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
-				val value = map.get( currentX ,currentY )
-				println("Visit ("+currentX+","+currentY+") is_set = "+isSet+" , value = "+value)
-				if ( isSet && (currentX != x || currentY != y ) ) {
-					map.set( currentX , currentY , value + 1)
-				}
-			}
-			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
-		} 
-		else {
-			// calculates neighbour count map 
-			// because it's not set yet
-			getNeighbourCountMap()
-		}
-		
-		if ( debug ) {
-			println("\n\n================ SET ( "+x+" / "+y+" ) ===================")
-			printBoard()
-			printNeighbourCount()
-		}
-		
+		set(x,y,true)
 		this
 	}
 	
@@ -238,6 +242,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		if ( neighbourCountMap.isDefined ) {
 			return neighbourCountMap.get
+		}
+		
+		if ( debug ) {
+			println("=== creating neightbour count map ===")
 		}
 		
 		// calculate neighbour count once 

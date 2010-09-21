@@ -31,7 +31,7 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
 		tmp * ARRAY_ELEMENT_BIT_WIDTH
 	} else {
-		height 
+		w 
 	}
 	
 	private var data : Array[Int]= new Array[Int]( calcLength(w,h ) )
