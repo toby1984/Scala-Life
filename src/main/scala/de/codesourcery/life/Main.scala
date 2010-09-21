@@ -3,7 +3,6 @@ package de.codesourcery.life
 import de.codesourcery.life.entities.Board
 import de.codesourcery.life.ui.UIController
 import de.codesourcery.life.ui.LifeFrame
-import de.codesourcery.life.ui.TracingRepaintManager
 import javax.swing.SwingUtilities
 
 /** 

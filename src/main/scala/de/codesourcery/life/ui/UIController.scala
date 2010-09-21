@@ -53,7 +53,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 			}
 			lastCall = currentTime
 			
-			// advance the model , stop
+			// advance the model , stops
 			// clock by returning false
 			// if the model population
 			// no longer changes

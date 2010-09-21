@@ -121,7 +121,7 @@ class Clock(private val caller : ClockListener )
 						clock = Some( new ClockThread )
 						clock.get.start()
 					}
-					case _ =>
+					case _ => // clock is already running
 				}
 			}
 		}			

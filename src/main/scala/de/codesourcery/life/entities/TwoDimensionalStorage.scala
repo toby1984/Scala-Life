@@ -42,7 +42,11 @@ abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
 	/**
 	 * Creates an independent copy of this
 	 * instance with a specific size.
-	 * 
+	 *
+	 * <p>If the target is smaller than this
+	 * storage, this method will ignore
+	 * all elements that do not fall within the 
+	 * bounds of the target.</p
 	 * @return
 	 */
 	def createCopy(width:Int,height:Int) : TwoDimensionalStorage[T]	
