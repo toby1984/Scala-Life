@@ -31,7 +31,11 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * Holds the simulation's current generation counter.
 	 */
 	private var currentGeneration = 1
+	
+	private var neighbourCountMap : Option[Torus[Int]] = None
 
+	var debug = false
+	
 	/**
 	 * Creates a game board with a given
 	 * size.
@@ -73,6 +77,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 	def createCopy() : Board = {
 		val result = new Board( torus.createCopy() )
 		result.currentGeneration = currentGeneration
+		result.neighbourCountMap = neighbourCountMap  match {
+			case Some(map) => Some(map.createCopy())
+			case None => None
+		}
 		result
 	}
 	
@@ -80,6 +88,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
 		torus.resize( newWidth , newHeight )
+		neighbourCountMap  = None // recalculate
 	}
 	
 	def printBoard() {
@@ -96,21 +105,11 @@ class Board private (private var torus : Torus[Boolean] ) {
 	}
 	
 	def printNeighbourCount() {
-		// calculate neighbour count once 
-		// for each field and store those
-		// in a two-dimensional array
-		val neighbourCount = new AnyTorus[Int]( width , height )
-		
-		val countFunction : (Int ,Int ,Boolean) => Unit = ( x , y , value ) => {
-			neighbourCount.set( x , y , getNeighbourCount( x , y ) )
-		}
-		torus.visitAll( countFunction )
-		
-		neighbourCount.visitAll( { (x , y , count ) => {
+		getNeighbourCountMap().visitAll( { (x , y , count ) => {
 			if ( x == 0 ) {
 				println
 			}
-			print( count+"  " )
+			print( (count+"  ").padTo(3,' ')+"|" )
 		} } ) 		
 	}
 	
@@ -125,6 +124,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	def valueOf( source : Board) {
 		torus = source.torus.createCopy
+		neighbourCountMap = source.neighbourCountMap match {
+			case Some(map) => Some(map.createCopy())
+			case None => None
+		}		
 		currentGeneration = source.currentGeneration 
 	}
 	
@@ -135,6 +138,9 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * The generation counter is reset to 1 as well.
 	 */
 	def reset() {
+		if ( neighbourCountMap.isDefined ) {
+			neighbourCountMap.get.clear()
+		}
 		visitAll( ( x , y , isSet ) => { torus.set( x,y,false ) } )
 		currentGeneration = 1
 	}
@@ -170,7 +176,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * @return
 	 */
 	def clear(x : Int , y : Int) : Board = {
-		torus.set(x,y,false)
+		if ( neighbourCountMap.isDefined ) {
+			neighbourCountMap.get.clear()
+		}
+		torus.clear() // torus.set(x,y,false)
 		this
 	}	
 	
@@ -181,8 +190,36 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * @param y
 	 * @return
 	 */
-	def set(x : Int , y : Int) : Board = {
+	def set(x : Int , y : Int) : Board = 
+	{
 		torus.set(x,y,true)
+		
+		// update neighbour count
+		// by incrementing the count of all direct
+		// neighbours
+		if ( neighbourCountMap.isDefined) {
+			val map = neighbourCountMap.get
+			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
+				val value = map.get( currentX ,currentY )
+				println("Visit ("+currentX+","+currentY+") is_set = "+isSet+" , value = "+value)
+				if ( isSet && (currentX != x || currentY != y ) ) {
+					map.set( currentX , currentY , value + 1)
+				}
+			}
+			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
+		} 
+		else {
+			// calculates neighbour count map 
+			// because it's not set yet
+			getNeighbourCountMap()
+		}
+		
+		if ( debug ) {
+			println("\n\n================ SET ( "+x+" / "+y+" ) ===================")
+			printBoard()
+			printNeighbourCount()
+		}
+		
 		this
 	}
 	
@@ -196,7 +233,13 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	def isAlive(x:Int,y:Int) : Boolean = torus.get( x , y)
 	
-	def getNeighbourCountMap() : Torus[Int] = {
+	def getNeighbourCountMap() : Torus[Int] = 
+	{
+		
+		if ( neighbourCountMap.isDefined ) {
+			return neighbourCountMap.get
+		}
+		
 		// calculate neighbour count once 
 		// for each field and store those
 		// in a two-dimensional array
@@ -206,9 +249,48 @@ class Board private (private var torus : Torus[Boolean] ) {
 			neighbourCount.set( x , y , getNeighbourCount( x , y ) )
 		}
 		torus.visitAll( countFunction )
+		
+		neighbourCountMap = Some( neighbourCount )
 		neighbourCount
 	}
 	
+	/**
+	 * Returns the number of cells that are
+	 * alive around a given X-Y coordinate.
+	 * 
+	 * <p>
+	 * This method counts all cells within
+	 * a 3x3 box centered at the given
+	 * X-Y coordinate. 
+	 * </p>
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	private def getNeighbourCount(x:Int,y:Int) : Int = {
+		
+		var result = 0;
+		val f : (Int,Int,Boolean) => Unit = {
+			( currentX , currentY , set ) => 
+			{
+				if ( set && ( currentX != x || currentY != y ) ) {
+					result += 1
+				}
+			}
+		}
+		
+/*       Here we make use of the facts that we 
+		
+		 - know the iteration order ( row by row, starting
+		   with the leftmost array element (zero) on each row)
+		
+		 - know that invalid array coordinates (less than zero
+		   or greater than the actual width/height of
+		   the underlying array) automatically get wrapped around
+*/		
+		torus.visit( x - 1 , y - 1 , x + 1  , y + 1 , f );
+		return result
+	}	
 	/**
 	 * Advances the simulation to the next generation.
 	 * 
@@ -252,44 +334,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 		return ! isStable
 	}
 
-	/**
-	 * Returns the number of cells that are
-	 * alive around a given X-Y coordinate.
-	 * 
-	 * <p>
-	 * This method counts all cells within
-	 * a 3x3 box centered at the given
-	 * X-Y coordinate. 
-	 * </p>
-	 * @param x
-	 * @param y
-	 * @return
-	 */
-	private def getNeighbourCount(x:Int,y:Int) : Int = {
-		
-		var result = 0;
-		val f : (Int,Int,Boolean) => Unit = {
-			( currentX , currentY , set ) => 
-			{
-				if ( set && ( currentX != x || currentY != y ) ) {
-					result += 1
-				}
-			}
-		}
-		
-/*       Here we make use of the facts that we 
-		
-		 - know the iteration order ( row by row, starting
-		   with the leftmost array element (zero) on each row)
-		
-		 - know that invalid array coordinates (less than zero
-		   or greater than the actual width/height of
-		   the underlying array) automatically get wrapped around
-*/		
-		torus.visit( x - 1 , y - 1 , x + 1  , y + 1 , f );
-		return result
-	}
-	
 }
 
 object Board {

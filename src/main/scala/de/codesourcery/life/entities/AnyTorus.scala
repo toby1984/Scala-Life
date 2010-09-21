@@ -17,7 +17,7 @@ class AnyTorus[T]( private val data : TwoDimensionalStorage[T] ) extends Torus[T
 	def createCopy() : AnyTorus[T] = {
 		new AnyTorus[T]( data.createCopy )
 	}
-	
+
 }
 
 private class ArrayStorage[T](val w:Int,val h:Int) extends TwoDimensionalStorage[T](w,h) {
@@ -29,6 +29,10 @@ private class ArrayStorage[T](val w:Int,val h:Int) extends TwoDimensionalStorage
 			null.asInstanceOf[T]
 		else
 			data(x)(y).asInstanceOf[T]
+	}
+	
+	def clear() {
+		data = new Array[Array[Any]](w)
 	}
 	
 	 def setValueAt(x:Int,y:Int,value:T) {

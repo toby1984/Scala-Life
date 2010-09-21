@@ -47,4 +47,10 @@ abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
 	 */
 	def createCopy(width:Int,height:Int) : TwoDimensionalStorage[T]	
 	
+    /**
+	 * Resets this storage's content
+	 * to it's initial state.
+	 */
+	def clear() :Unit
+	
 }

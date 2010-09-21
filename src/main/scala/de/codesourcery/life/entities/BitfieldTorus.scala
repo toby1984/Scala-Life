@@ -40,6 +40,10 @@ private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage
 		Math.ceil( ( aHeight * paddedWidth ) / ARRAY_ELEMENT_BIT_WIDTH ).asInstanceOf[Int]
 	}
 	
+	def clear() {
+		data = new Array[Int]( calcLength(w,h ) )
+	}
+	
 	private def calcArrayPosition(x:Int,y:Int) : (Int,Int) = {
 		val bitOffset : Int = x + y* paddedWidth
 		val byteOffset : Int = bitOffset / ARRAY_ELEMENT_BIT_WIDTH 

@@ -44,6 +44,14 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	def createCopy() : Torus[T]
 	
 	/**
+	 * Resets this torus
+	 * to it's initial state.
+	 */
+	def clear() {
+		data.clear();
+	}
+	
+	/**
 	 * Copies data from this instance
 	 * onto another.
 	 * 
@@ -89,7 +97,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @return a valid array index into the X (width) array
 	 */
 	private def realX(x:Int) = {
-		val result = x % (width-1)
+		val result = x % width
 		if ( result >= 0 ) {
 			result
 		} else {
@@ -112,7 +120,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @return a valid array index into the Y (height) array
 	 */	
 	private def realY(y:Int) = {
-		val result = y % (height-1)
+		val result = y % height
 		if ( result >= 0 ) {
 			result
 		} else {
