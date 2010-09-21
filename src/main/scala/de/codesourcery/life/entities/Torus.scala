@@ -165,7 +165,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @param func
 	 */
 	def visitAll( func : => (Int,Int,T) => Unit ) {
-		println("Torus#visitAll(): "+width+" x "+height)
+		// println("Torus#visitAll(): "+width+" x "+height)
 		visit( 0 , 0 , width-1 , height - 1 , func )
 	}
 	
@@ -187,7 +187,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 */
 	def visit(startX:Int,startY:Int,endX:Int,endY:Int, func : => (Int,Int,T) => Unit ) {
 
-		println("Visit( "+startX+" , "+startY+" ) => ( "+endX+" , "+endY+" )")
+		// println("Visit( "+startX+" , "+startY+" ) => ( "+endX+" , "+endY+" )")
 		var currentY = startY
 		while ( currentY <= endY ) {
 			
@@ -197,7 +197,7 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 			while( currentX <= endX ) {
 				val convertedX =
 					realX( currentX ) 
-				println(" ( "+currentX+", "+currentY+" ) => ( "+convertedX+" , "+convertedY+")")
+				// println(" ( "+currentX+", "+currentY+" ) => ( "+convertedX+" , "+convertedY+")")
 				func( currentX , currentY , data.getValueAt( convertedX, convertedY ) )
 				currentX += 1
 			}
