@@ -404,7 +404,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 object Board {
 	
 	private val threadPool = 
-			java.util.concurrent.Executors.newFixedThreadPool(1) // Runtime.getRuntime.availableProcessors + 1 )
+			java.util.concurrent.Executors.newSingleThreadExecutor()  // Runtime.getRuntime.availableProcessors + 1 )
 	
 	def queueTask( task : Runnable ) {
 		threadPool.execute( task )
