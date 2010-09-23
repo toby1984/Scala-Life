@@ -13,4 +13,14 @@ class QuadTreeTorus(w:Int,h:Int) extends Torus( new QuadTree(w,h) ) {
 		result.setData( getData().createCopy )
 		result
 	}
+	
+	def visitAlive( func : => (Int,Int) => Unit ) = {
+		
+		val wrapperFunction = (x:Int,y:Int,isSet:Boolean) => {
+			if ( isSet ) {
+				func( x , y )
+			}
+		}
+		visitAll( wrapperFunction )
+	}	
 }

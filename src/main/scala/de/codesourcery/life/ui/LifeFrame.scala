@@ -109,28 +109,23 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			}
 			
 			// render board
-			val drawFunction : (Int,Int,Boolean) => Unit = {
-				( x , y , isSet ) => {
-					if ( isSet ) {
-						val x1 : Float = x * stepX
-						val y1 : Float = y * stepY
-						if ( drawGrid ) {
-							graphics.fillRect( 
-									x1.asInstanceOf[Int] , 
-									y1.asInstanceOf[Int],
-									stepX.asInstanceOf[Int], 
-									stepY.asInstanceOf[Int])
-						} else {
-							graphics.fillRect( 
+			val drawFunction : (Int,Int) => Unit = {
+				( x , y  ) => {
+
+//					if ( isSet ) {
+					val x1 : Float = x * stepX
+					val y1 : Float = y * stepY
+					
+					graphics.fillRect( 
 								x1.asInstanceOf[Int] , 
 								y1.asInstanceOf[Int],
 								stepX.asInstanceOf[Int], 
-								stepY.asInstanceOf[Int])							
-						}
-					}
+								stepY.asInstanceOf[Int])
+//					}
 				}
 			}
-			model.visitAll( drawFunction )
+			model.visitAlive( drawFunction )
+//			model.visitAll( drawFunction )			
 			
 			val text = "Generation: "+model.generation
 			val metrics = graphics.getFontMetrics

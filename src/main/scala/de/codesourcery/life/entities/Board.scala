@@ -2,6 +2,7 @@ package de.codesourcery.life.entities
 
 import scala.xml.Node
 import scala.xml.Elem
+import java.awt.Rectangle
 
 /**
  * This is the simulation's data model.
@@ -33,6 +34,8 @@ class Board private (private var torus : Torus[Boolean] ) {
 	private var currentGeneration = 1
 	
 	private var neighbourCountMap : Option[Torus[Int]] = None
+	
+	private val regionLocks : RegionLockSet = new BoardLockSet( torus.width , torus.height )
 
 	/**
 	 * Creates a game board with a given
@@ -85,6 +88,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	def resize(newWidth:Int,newHeight:Int) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
+		partitions = BoardLockSet.partition( newWidth,newHeight , 16 )
 		torus.resize( newWidth , newHeight )
 		neighbourCountMap  = None // ...needs to be recalculated
 	}
@@ -157,6 +161,18 @@ class Board private (private var torus : Torus[Boolean] ) {
 	}
 	
 	/**
+	 * Accepts a function that gets invoked once
+	 * for each X-Y coordinate with an alive cell.
+	 * 
+	 * @param func 
+	 */	
+	def visitAlive( func : => (Int,Int) => Unit ) {
+		torus.visitAlive( (x : Int,y : Int) => 
+			func( x , y )
+		)
+	}	
+	
+	/**
 	 * Returns whether a cell is alive
 	 * for a given X-Y coordinate.
 	 * 
@@ -180,13 +196,19 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	private def set(x:Int,y:Int, alive : Boolean ) {
 		
-		torus.set(x,y,alive)
+		val oldValue =
+			torus.set(x,y,alive)
+			
+		if ( oldValue == alive ) {
+			return
+		}
 		
 		// update neighbour count
 		// by incrementing or decrementing
 		// the count of all direct neighbours
 		
-		if ( neighbourCountMap.isDefined) {
+		if ( neighbourCountMap.isDefined) 
+		{
 			val map = neighbourCountMap.get
 			val increment = if ( alive ) 1 else -1
 			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
@@ -303,6 +325,11 @@ class Board private (private var torus : Torus[Boolean] ) {
 		// apply the rules to a new (initally empty) board
 		val newBoard = new Board( Board.createTorus( width,height) )
 		
+		// set an empty neighbourCount map
+		// so calling newBoard.set(x,y,true) will not
+		// trigger a full board scan
+		newBoard.neighbourCountMap  = Some( new AnyTorus[Int](width,height) )
+		
 		var isStable = true // set to false if at least one cell dies or comes alive
 		
 		// hint: this function relies on
@@ -325,7 +352,20 @@ class Board private (private var torus : Torus[Boolean] ) {
 			
 		}
 		
-		torus.visitAll( lifeFunction )
+		// torus.visitAll( lifeFunction )
+		
+		val latch = new java.util.concurrent.CountDownLatch( partitions.length )
+		
+		println("----------------")
+		var index = 0
+		while ( index < partitions.length ) {
+			println("Queueing "+partitions(index))
+			Board.queueTask( new CalculationTask( partitions( index ) , latch , lifeFunction ))
+			index += 1
+		}
+		
+		// wait for all partitions to be calculated...
+		latch.await()
 		
 		// advance to next generation
 		torus = newBoard.torus
@@ -335,10 +375,40 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		return ! isStable
 	}
+	
+	private var partitions = BoardLockSet.partition( width,height , 16 )
 
+	class CalculationTask(private val rect:Rectangle,private val latch:java.util.concurrent.CountDownLatch, private val calcFunction : ( Int , Int , Boolean) => Unit ) extends Runnable {
+		
+		def run() 
+		{
+			try {
+				var x2 = rect.x + rect.width
+				if ( x2 >= width ) {
+					x2 = width
+				}
+				var y2 = rect.y + rect.height
+				if ( y2 >= height ) {
+					y2 = height
+				}
+				regionLocks.doWithRegionLock( rect.x , rect.y , x2 , y2 ) {
+					torus.visit( rect.x , rect.y , x2 , y2 , calcFunction )
+				}
+			} finally {
+				latch.countDown()
+			}
+		}
+	}
 }
 
 object Board {
+	
+	private val threadPool = 
+			java.util.concurrent.Executors.newFixedThreadPool(1) // Runtime.getRuntime.availableProcessors + 1 )
+	
+	def queueTask( task : Runnable ) {
+		threadPool.execute( task )
+	}
 	
 	/**
 	 * Factory method.
@@ -407,10 +477,14 @@ object Board {
 	}
 
 	def createTorus(w:Int,h:Int) : Torus[Boolean] = {
-		
-		if ( QuadTree.isSupportedSize(w,h) ) {
-			return new QuadTreeTorus(w,h)
-		}
+
+//		if ( 1 == 1 ) {
+//			return new HashSetTorus(w,h)
+//		}
+//		
+//		if ( QuadTree.isSupportedSize(w,h) ) {
+//			return new QuadTreeTorus(w,h)
+//		}
 		new BitfieldTorus(w,h)
 	}
 }

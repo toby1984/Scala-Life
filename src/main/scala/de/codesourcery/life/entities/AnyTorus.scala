@@ -10,6 +10,8 @@ import scala.collection.mutable.ArrayBuffer
  */
 class AnyTorus[T]( private val data : TwoDimensionalStorage[T] ) extends Torus[T](data) {
 
+	private val locks : RegionLockSet = new BoardLockSet(data.width , data.height )
+	
 	def this(width:Int,height:Int) {
 		this( new ArrayStorage[T](width,height) )
 	}
@@ -17,6 +19,8 @@ class AnyTorus[T]( private val data : TwoDimensionalStorage[T] ) extends Torus[T
 	def createCopy() : AnyTorus[T] = {
 		new AnyTorus[T]( data.createCopy )
 	}
+	
+	def visitAlive( func : => (Int,Int) => Unit ) = throw new UnsupportedOperationException("Not implemented")
 
 }
 
@@ -35,13 +39,17 @@ private class ArrayStorage[T](val w:Int,val h:Int) extends TwoDimensionalStorage
 		data = new Array[Array[Any]](w)
 	}
 	
-	 def setValueAt(x:Int,y:Int,value:T) {
+	 def setValueAt(x:Int,y:Int,value:T) : T = {
 		var ary = data(x)
+		var oldValue : T = null.asInstanceOf[T]
 		if (ary == null ) {
 			ary = new Array[Any]( height )
 			data(x)=ary
+		} else {
+			oldValue = ary(y).asInstanceOf[T]
 		}
 		ary(y)=value
+		oldValue
 	}
 	 
 	def createCopy() : TwoDimensionalStorage[T] = {

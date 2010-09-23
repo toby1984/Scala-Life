@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
  * 
  * @author Tobias.Gierke@code-sourcery.de
  */
-class BitfieldTorus( private val data : TwoDimensionalStorage[Boolean] ) extends Torus[Boolean](data) {
+class BitfieldTorus( private val data : BitfieldStorage  ) extends Torus[Boolean](data) {
 
 	def this(width:Int,height:Int) {
 		this( new BitfieldStorage(width,height) )
@@ -16,6 +16,10 @@ class BitfieldTorus( private val data : TwoDimensionalStorage[Boolean] ) extends
 	
 	def createCopy() : BitfieldTorus = {
 		new BitfieldTorus( data.createCopy() )
+	}
+	
+	def visitAlive( func : => (Int,Int) => Unit ) {
+		data.visitAlive( func )
 	}
 }
 
@@ -40,6 +44,34 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 		Math.ceil( ( aHeight * paddedWidth ) / ARRAY_ELEMENT_BIT_WIDTH ).asInstanceOf[Int]
 	}
 	
+	def visitAlive( func : => (Int,Int) => Unit ) {
+		
+		var bitOffset = 0
+		var index = 0
+		val len = data.length
+		
+		while ( index < len ) {
+			val value = data(index)
+			if ( value != 0 ) 
+			{ // at least one bit is set
+				var currentOffset = bitOffset
+				var currentBit = 0
+				while ( currentBit < ARRAY_ELEMENT_BIT_WIDTH ) 
+				{
+					if ( ( value & ( 1 << currentBit ) ) != 0 ) {
+						val y = currentOffset / paddedWidth
+						val x = currentOffset % paddedWidth
+						func( x , y )
+					}
+					currentBit += 1
+					currentOffset += 1
+				}
+			}
+			bitOffset += ARRAY_ELEMENT_BIT_WIDTH
+			index += 1
+		}
+	}
+	
 	def clear() {
 		data = new Array[Int]( calcLength(w,h ) )
 	}
@@ -53,20 +85,23 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 		return ( data(byteOffset) & ( 1 << offsetInByte ) ) != 0
 	}
 	
-	def setValueAt(x:Int,y:Int,value:Boolean) {
+	def setValueAt(x:Int,y:Int,value:Boolean) : Boolean = {
 		
 		val bitOffset : Int = x + y* paddedWidth
 		val byteOffset : Int = bitOffset >>> SHIFT_BITCOUNT //   read: bitOffset / ARRAY_ELEMENT_BIT_WIDTH
 		val offsetInByte : Int = bitOffset - ( byteOffset  << SHIFT_BITCOUNT ) // read: byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
+		
+		val oldValue = ( data(byteOffset) & ( 1 << offsetInByte ) ) != 0
 		
 		if ( value ) { // set bit
 			data(byteOffset) = ( data(byteOffset) | 1 << offsetInByte)
 		} else { // clear bit
 			data(byteOffset) = (data(byteOffset) & ~(1 << offsetInByte) )
 		}
+		oldValue
 	}
 	 
-	def createCopy() : TwoDimensionalStorage[Boolean] = {
+	def createCopy() : BitfieldStorage = {
 	 		val result = new BitfieldStorage( w , h )
 	 		Array.copy( data , 0 , result.data , 0 , data.length )
 	 		result
@@ -76,7 +111,7 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 
  		val result = new BitfieldStorage( newWidth , newHeight )
 
- 		val copyFunction = { (x:Int,y:Int,isSet:Boolean) => {
+ 		val copyFunction : (Int,Int,Boolean) => Unit = { (x,y,isSet) => {
  			if ( isSet && ( x < newWidth && y < newHeight ) ) {
  				result.setValueAt( x , y , true )
  			}

@@ -13,7 +13,7 @@ import scala.collection.mutable.ArrayBuffer
  * @param b
  */
 abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
-
+	
 	/**
 	 * Returns the actual width of the array.
 	 * 
@@ -42,6 +42,19 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @return
 	 */
 	def createCopy() : Torus[T]
+	
+	/**
+	 * Applies a function to a given region
+	 * while making sure no other thread can
+	 * aquire a lock for the same coordinate.
+	 * 
+	 * @param x
+	 * @param y
+	 * @param func
+	 */
+	def doWithRegionLock(x1:Int,y1:Int,x2:Int,y2:Int)( func: => Torus[T] => Unit ) : Unit = {
+		throw new UnsupportedOperationException()
+	}
 	
 	/**
 	 * Resets this torus
@@ -139,11 +152,10 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	 * @param x
 	 * @param y
 	 * @param value the value to store
-	 * @return <code>this</code> instance (for chaining)
+	 * @return the previous value at the given coordinates
 	 */
-	def set( x : Int , y : Int , value : T ) : Torus[T] = {
+	def set( x : Int , y : Int , value : T ) : T = {
 		data.setValueAt( realX( x ) , realY( y ), value  )
-		this
 	}
 	
 	def resize(newWidth:Int,newHeight:Int) {
@@ -175,6 +187,14 @@ abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
 	def visitAll( func : => (Int,Int,T) => Unit ) {
 		getData().visitAll( func )
 	}
+	
+	/**
+	 * Accepts a function that gets invoked once
+	 * for each X-Y coordinate with an alive cell.
+	 * 
+	 * @param func 
+	 */		
+	def visitAlive( func : => (Int,Int) => Unit )
 	
 	/**
 	 * Accepts a function that gets called once for each

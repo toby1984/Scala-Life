@@ -25,11 +25,12 @@ abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
 	 * @param x X coordinate (range 0...height-1)
 	 * @param y Y coordinate (range 0...width-1)
 	 * @param value the value to store
+	 * @return the old value
 	 * @thows ArrayIndexOutOfBoundsException if the coordinates
 	 * are beyond the actual extend (less than zero
 	 * or equals or greater than width / height )
 	 */	
-	def setValueAt(x:Int,y:Int,value:T) : Unit
+	def setValueAt(x:Int,y:Int,value:T) : T
 	
 	/**
 	 * Creates an independent copy of this

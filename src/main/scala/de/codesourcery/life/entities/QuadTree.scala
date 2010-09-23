@@ -36,7 +36,7 @@ class QuadTree(private val w : Int, private val h : Int) extends TwoDimensionalS
 	 * are beyond the actual extend (less than zero
 	 * or equals or greater than width / height )
 	 */	
-	def setValueAt(x:Int,y:Int,value:Boolean)  {
+	def setValueAt(x:Int,y:Int,value:Boolean)  : Boolean = {
 		root.setValue(x,y,value)
 	}
 	
@@ -95,22 +95,6 @@ class QuadTree(private val w : Int, private val h : Int) extends TwoDimensionalS
 	def clear() {
 		root = new TreeNode( new Envelope(0,0,w,h ) )
 	}
-}
-
-class Envelope(val x1 : Int, val y1 : Int, val x2 : Int, val y2 : Int) 
-{
-	def this(x1 : Int, y1 : Int,p:Point) {
-		this( x1 , y1 , p.x , p.y )
-	}
-	
-	def contains(x : Int , y : Int ) : Boolean = {
-		return ( x >= x1 && x <= x2 ) && ( y >= y1 && y <= y2 ); 
-	}
-
-	def width = ( x2 - x1 )
-	def height = ( y2 - y1 )
-	
-	override def toString = "Envelope[ ("+x1+","+y1+") , ("+x2+","+y2+") ]"
 }
 
 case class Point(x:Int,y:Int) 
@@ -197,8 +181,8 @@ class TreeNode(val envelope : Envelope, var value: Option[Point]) {
 		return false
 	}
 	
-	def setValue(x:Int,y:Int,newValue:Boolean) 
-	{
+	def setValue(x:Int,y:Int,newValue:Boolean) : Boolean = {
+		
 		require( envelope.contains(x, y) )
 	
 		if ( ! value.isDefined ) 
@@ -207,21 +191,22 @@ class TreeNode(val envelope : Envelope, var value: Option[Point]) {
 			if ( newValue == true ) { 
 				value = Some(Point(x,y))
 			} // nothing to do since false == None
-			return			
+			return false			
 		}
 		
+		// a value is already present on this node
 		val currentPoint = value.get
 		if ( currentPoint.matches(x,y) )  
 		{
 			if ( newValue == true ) {
-				return
+				return true // point exists => is set
 			}
 			// clear point
 			value = None
-			return;
+			return true
 		}
 		
-		// we already reached max. capacity for this node 
+		// we reached the max. capacity for this node 
 		var matchingQuadrant : TreeNode = null
 		var index = 0
 		while ( index < 4 ) {
@@ -231,17 +216,32 @@ class TreeNode(val envelope : Envelope, var value: Option[Point]) {
 					val newNode = new TreeNode( env )
 					quadrants(index) = newNode
 					newNode.setValue(x,y,newValue)
-					return
+					return false
 				}
 			} else if ( quadrants(index).envelope.contains( x,y ) ) {
-				quadrants(index).setValue(x,y,newValue)
-				return
+				return quadrants(index).setValue(x,y,newValue)
 			}
 			index+=1
 		}
 
 		throw new RuntimeException("Unreachable code reached")
 	}
+}
+
+class Envelope(val x1 : Int, val y1 : Int, val x2 : Int, val y2 : Int)
+{
+        def this(x1 : Int, y1 : Int,p:Point) {
+                this( x1 , y1 , p.x , p.y )
+        }
+
+        def contains(x : Int , y : Int ) : Boolean = {
+                return ( x >= x1 && x <= x2 ) && ( y >= y1 && y <= y2 );
+        }
+
+        def width = ( x2 - x1 )
+        def height = ( y2 - y1 )
+
+        override def toString = "Envelope[ ("+x1+","+y1+") , ("+x2+","+y2+") ]"
 }
 
 object QuadTree {
