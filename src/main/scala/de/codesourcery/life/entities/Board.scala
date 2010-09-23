@@ -39,7 +39,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 * size.
 	 */
 	def this( w:Int , h:Int) {
-		this( new BitfieldTorus( w,h) )
+		this( Board.createTorus( w,h) )
 	}
 	
 	/**
@@ -301,7 +301,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		val neighbourCount = getNeighbourCountMap()
 		
 		// apply the rules to a new (initally empty) board
-		val newBoard = new Board( new BitfieldTorus( width,height) )
+		val newBoard = new Board( Board.createTorus( width,height) )
 		
 		var isStable = true // set to false if at least one cell dies or comes alive
 		
@@ -405,5 +405,12 @@ object Board {
 		board.torus.setData( tmp.torus.getData() )
 		board.currentGeneration = tmp.currentGeneration
 	}
-	
+
+	def createTorus(w:Int,h:Int) : Torus[Boolean] = {
+		
+		if ( QuadTree.isSupportedSize(w,h) ) {
+			return new QuadTreeTorus(w,h)
+		}
+		new BitfieldTorus(w,h)
+	}
 }

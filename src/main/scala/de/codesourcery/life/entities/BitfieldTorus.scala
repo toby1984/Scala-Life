@@ -19,7 +19,7 @@ class BitfieldTorus( private val data : TwoDimensionalStorage[Boolean] ) extends
 	}
 }
 
-private class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean](w,h) {
+class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean](w,h) {
 	
 	// number of bits per array element
 	private val ARRAY_ELEMENT_BIT_WIDTH = 32
