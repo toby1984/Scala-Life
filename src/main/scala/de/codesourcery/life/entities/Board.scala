@@ -34,7 +34,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	private var neighbourCountMap : Option[Torus[Int]] = None
 	
-	private var regionLocks : RegionLockSet = createLocks(torus.width,torus.height)
+	private var regionLocks = createLocks(torus.width,torus.height)
 	
 	private var partitions : Array[Rectangle] = createPartitions(torus.width,torus.height)
 	

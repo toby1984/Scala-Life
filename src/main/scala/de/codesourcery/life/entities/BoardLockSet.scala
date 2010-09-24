@@ -13,7 +13,7 @@ import java.awt.Rectangle
  * 
  * @author tobias.gierke@code-sourcery.de
  */
-class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
+class BoardLockSet(width:Int,height:Int,lockCount:Int)  {
 
 	private val lockSet : Array[Rectangle]= BoardLockSet.partition(width,height, lockCount )
 	
