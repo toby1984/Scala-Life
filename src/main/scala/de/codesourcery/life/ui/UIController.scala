@@ -22,14 +22,10 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 	private val listener = new ClockListener() {
 		
-		var lastCall : Long = 0
-		var allFps : Long = 0
 		var counter : Long = 0
 		
 		def clockStateChanged(isRunning:Boolean) {
 			if ( isRunning == false ) {
-				allFps = 0
-				lastCall = 0
 				counter = 0
 			}
 			view.simulatorStateChanged( isRunning )
@@ -37,27 +33,24 @@ abstract class UIController(private val m : Board , private val view : View ) {
 	
 		def onTick() : Boolean = {
 			
-			val currentTime  = System.currentTimeMillis
-			if (lastCall != 0 ) {
-				
-				val duration = currentTime - lastCall
-				val fps = Math.round(1000.0 / duration).asInstanceOf[Int]
-				
-				counter+=1
-				allFps += fps
-				
-				val avgFps = ( allFps / counter )
-				if ( ( counter % 100 ) == 0 ) {
-					println("FPS: "+avgFps)
-				}
-			}
-			lastCall = currentTime
-			
 			// advance the model , stops
 			// clock by returning false
 			// if the model population
 			// no longer changes
-			if ( model.advance() ) {
+			
+			
+			var time1 : Double = -System.nanoTime
+			val continue = model.advance()
+			time1 += System.nanoTime
+			
+			counter += 1
+			if ( ( counter % 200 ) == 0 ) {
+				val format = new java.text.DecimalFormat("###,###,###,###")
+				val cellsPerSecond =  ( m.width * m.height) / ( time1 / (1000*1000*1000) )  
+				println("Cells / second : "+format.format( cellsPerSecond) )
+			}			
+			
+			if ( continue ) {
 				view.modelChanged()
 				true
 			} else {

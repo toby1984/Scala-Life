@@ -39,12 +39,14 @@ class Board private (private var torus : Torus[Boolean] ) {
 	private var partitions : Array[Rectangle] = createPartitions(torus.width,torus.height)
 	
 	private def createLocks(w:Int,h:Int) = {
-		new BoardLockSet( w , h , Board.cpuCount )
+		new BoardLockSet( w , h , getPartitionCount(w,h) )
 	}
 	
 	private def createPartitions(w:Int,h:Int) = {
-		BoardLockSet.partition( w,h , Board.cpuCount )
+		BoardLockSet.partition( w,h , getPartitionCount(w,h) )
 	}
+	
+	private def getPartitionCount(w:Int,h:Int) = Board.cpuCount * 4
 	
 	/**
 	 * Creates a game board with a given
@@ -98,6 +100,8 @@ class Board private (private var torus : Torus[Boolean] ) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
 		
+		println("Changed board size to "+newWidth+"x"+newHeight+" with "+getPartitionCount(newWidth,newHeight)+" partitions.")
+				
 		regionLocks = createLocks(newWidth,newHeight)
 		partitions = createPartitions(newWidth,newHeight)
 		torus.resize( newWidth , newHeight )

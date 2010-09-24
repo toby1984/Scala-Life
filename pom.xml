@@ -68,11 +68,13 @@ limitations under the License.
             </goals>
           </execution>
         </executions>
+<!--
         <configuration>
           <args>
            <arg>-verbose</arg>
           </args>
         </configuration>
+-->
       </plugin>
 
       <plugin>

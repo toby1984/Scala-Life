@@ -17,6 +17,8 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 
 	private val lockSet : Array[Rectangle]= BoardLockSet.partition(width,height, lockCount )
 	
+	private val collisionCache = new java.util.concurrent.ConcurrentHashMap[Int,Array[ReentrantLock]]
+	
 	private val locks : Array[ ReentrantLock] = {
 		val tmp = new Array[ReentrantLock]( lockSet.length )
 		var i = 0
@@ -31,23 +33,50 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 
 		val x2 = x1 + w
 		val y2 = y1 + h
-
+		
+		var hash = 23
+		hash = hash * 31 + ( x1 ^( x1 << 16 ) )
+		hash = hash * 31 + ( y1 ^( x1 << 16 ) )
+		hash = hash * 31 + ( w ^( x1 << 16 ) )
+		hash = hash * 31 + ( h ^( x1 << 16 ) )
+		
+		val cachedLocks = collisionCache.get( hash )
+		
 		var aquiredLockCount = 0		
-		val aquiredLocks = new Array[ReentrantLock](lockSet.length)
+		var aquiredLocks : Array[ReentrantLock] = null
 		try {
-			var i = 0
-			while ( i < lockSet.length ) 
+			
+			if ( cachedLocks != null ) 
 			{
-				if ( lockSet(i).intersects( x1 , y1 , w , h ) ) 
-				{
-					locks(i).lock()
-					aquiredLocks(aquiredLockCount) = locks(i)
-					aquiredLockCount+=1
+				var currentLock = cachedLocks(0)
+				while ( currentLock != null ) {
+					currentLock.lock()
+					aquiredLockCount += 1	
+					if ( aquiredLockCount < lockSet.length ) {
+						currentLock = cachedLocks(aquiredLockCount) // at least one lock is always present
+					} else {
+						currentLock = null
+					}
 				}
-				i += 1
+				aquiredLocks = cachedLocks
+			} else {
+				// no locks cached yet
+				aquiredLocks = new Array[ReentrantLock](lockSet.length)
+				var i = 0
+				while ( i < lockSet.length ) 
+				{
+					if ( lockSet(i).intersects( x1 , y1 , w , h ) ) 
+					{
+						locks(i).lock()
+						aquiredLocks(aquiredLockCount) = locks(i)
+						aquiredLockCount+=1
+					}
+					i += 1
+				}
 			}
 			
 			if ( aquiredLockCount > 0 ) {
+				collisionCache.put( hash , aquiredLocks )
 				func
 				return
 			}
