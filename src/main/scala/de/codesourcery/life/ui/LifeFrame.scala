@@ -112,7 +112,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			val drawFunction : (Int,Int) => Unit = {
 				( x , y  ) => {
 
-//					if ( isSet ) {
 					val x1 : Float = x * stepX
 					val y1 : Float = y * stepY
 					
@@ -121,11 +120,9 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 								y1.asInstanceOf[Int],
 								stepX.asInstanceOf[Int], 
 								stepY.asInstanceOf[Int])
-//					}
 				}
 			}
 			model.visitAlive( drawFunction )
-//			model.visitAll( drawFunction )			
 			
 			val text = "Generation: "+model.generation
 			val metrics = graphics.getFontMetrics
@@ -435,7 +432,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	def modelChanged() {
 		modelWidth.setText( model.width.toString )
 		modelHeight.setText( model.height.toString )
-		drawPanel.repaint()
+		// drawPanel.repaint()
 	}
 	
 	

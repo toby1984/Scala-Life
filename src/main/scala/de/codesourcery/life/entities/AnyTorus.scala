@@ -10,8 +10,6 @@ import scala.collection.mutable.ArrayBuffer
  */
 class AnyTorus[T]( private val data : TwoDimensionalStorage[T] ) extends Torus[T](data) {
 
-	private val locks : RegionLockSet = new BoardLockSet(data.width , data.height )
-	
 	def this(width:Int,height:Int) {
 		this( new ArrayStorage[T](width,height) )
 	}

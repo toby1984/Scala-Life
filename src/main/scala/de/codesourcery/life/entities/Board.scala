@@ -35,8 +35,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	private var neighbourCountMap : Option[Torus[Int]] = None
 	
-	private val regionLocks : RegionLockSet = new BoardLockSet( torus.width , torus.height )
+	private val regionLocks : RegionLockSet = new BoardLockSet( torus.width , torus.height , Board.cpuCount )
 
+	private var partitions = BoardLockSet.partition( width,height , Board.cpuCount )
+	
 	/**
 	 * Creates a game board with a given
 	 * size.
@@ -353,14 +355,13 @@ class Board private (private var torus : Torus[Boolean] ) {
 		}
 		
 		// torus.visitAll( lifeFunction )
-		
+		 
 		val latch = new java.util.concurrent.CountDownLatch( partitions.length )
 		
-		println("----------------")
 		var index = 0
 		while ( index < partitions.length ) {
-			println("Queueing "+partitions(index))
-			Board.queueTask( new CalculationTask( partitions( index ) , latch , lifeFunction ))
+			val task = new CalculationTask( partitions( index ) , latch , lifeFunction )
+			 Board.queueTask( task )
 			index += 1
 		}
 		
@@ -376,23 +377,18 @@ class Board private (private var torus : Torus[Boolean] ) {
 		return ! isStable
 	}
 	
-	private var partitions = BoardLockSet.partition( width,height , 16 )
-
-	class CalculationTask(private val rect:Rectangle,private val latch:java.util.concurrent.CountDownLatch, private val calcFunction : ( Int , Int , Boolean) => Unit ) extends Runnable {
+	class CalculationTask(private val rect:Rectangle,private val latch:java.util.concurrent.CountDownLatch, calcFunction : => ( Int , Int , Boolean) => Unit ) extends Runnable {
 		
 		def run() 
 		{
 			try {
-				var x2 = rect.x + rect.width
-				if ( x2 >= width ) {
-					x2 = width
+				regionLocks.doWithRegionLock( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height) {
+					torus.visit( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height , calcFunction )
 				}
-				var y2 = rect.y + rect.height
-				if ( y2 >= height ) {
-					y2 = height
-				}
-				regionLocks.doWithRegionLock( rect.x , rect.y , x2 , y2 ) {
-					torus.visit( rect.x , rect.y , x2 , y2 , calcFunction )
+			} catch {
+				case ex : Throwable => {
+					ex.printStackTrace()
+					println("Thread "+Thread.currentThread.getName+" caught Something Bad(tm)")
 				}
 			} finally {
 				latch.countDown()
@@ -404,7 +400,9 @@ class Board private (private var torus : Torus[Boolean] ) {
 object Board {
 	
 	private val threadPool = 
-			java.util.concurrent.Executors.newSingleThreadExecutor()  // Runtime.getRuntime.availableProcessors + 1 )
+			java.util.concurrent.Executors.newFixedThreadPool( cpuCount )
+	
+	def cpuCount : Int = 1 // Runtime.getRuntime.availableProcessors + 1
 	
 	def queueTask( task : Runnable ) {
 		threadPool.execute( task )

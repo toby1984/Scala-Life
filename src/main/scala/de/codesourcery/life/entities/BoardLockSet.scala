@@ -3,6 +3,7 @@ package de.codesourcery.life.entities
 import scala.collection.mutable.HashSet
 import java.util.concurrent.locks.ReentrantLock
 
+import java.awt.geom.Area
 import java.awt.Rectangle
 
 /**
@@ -12,11 +13,18 @@ import java.awt.Rectangle
  * 
  * @author tobias.gierke@code-sourcery.de
  */
-class BoardLockSet(width:Int,height:Int) extends RegionLockSet {
+class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 
-	private val LOCK_COUNT = 32
-	
-	private val lockSet : Array[Rectangle]= BoardLockSet.partition(width,height, LOCK_COUNT )
+	private val lockSet : Array[Area]= {
+		val rects = BoardLockSet.partition(width,height, lockCount )
+		var i = 0
+		val result = new Array[Area]( rects.length )
+		while ( i < rects.length ) {
+			result(i) = new Area( rects(i) )
+			i += 1
+		}
+		result
+	}
 	private val locks : Array[ ReentrantLock] = {
 		val tmp = new Array[ReentrantLock]( lockSet.length )
 		var i = 0
@@ -27,22 +35,42 @@ class BoardLockSet(width:Int,height:Int) extends RegionLockSet {
 		tmp
 	}
 	
-	def doWithRegionLock(x1:Int,y1:Int,x2:Int,y2:Int)( func: => Unit ) {
+	def doWithRegionLock(x1:Int,y1:Int,w:Int,h:Int)( func: => Unit ) {
 
-		var i = 0
-		while ( i < lockSet.length ) {
-			if ( lockSet(i).intersects( x1 , y1 , x2-x1 , y2-x1 ) ) 
+		val x2 = x1 + w
+		val y2 = y1 + h
+				
+
+		var aquiredLockCount = 0		
+		val aquiredLocks = new Array[ReentrantLock](lockSet.length)
+		try {
+			
+			var i = 0
+			while ( i < lockSet.length ) 
 			{
-				locks(i).lock()
-				try {
-					func
-					return
-				} finally {
-					locks(i).unlock()
+				if ( lockSet(i).intersects( x1 , y1 , w , h ) ) 
+				{
+					locks(i).lock()
+					aquiredLocks(aquiredLockCount) = locks(i)
+					aquiredLockCount+=1
 				}
+				i += 1
 			}
-			i += 1
+			
+			if ( aquiredLockCount > 0 ) {
+//				println("Thread "+Thread.currentThread.getName+" aquired "+aquiredLocks.size+" locks")
+				func
+				return
+			}
+		
+		} finally {
+			var i = 0
+			while ( i < aquiredLockCount ) {
+				aquiredLocks(i).unlock()
+				i+=1
+			}
 		}
+		throw new RuntimeException("Internal error, unable to lock region ("+x1+","+y1+") -> ("+x2+","+y2+")")
 	}
 }
 
@@ -61,25 +89,49 @@ object BoardLockSet {
 	 * slightly larger than the requested number
 	 * @return 
 	 */
-	def partition(areaWidth:Int,areaHeight:Int, regionCount : Int ) : Array[Rectangle] = {
+	def partition(width:Int,height:Int, regionCount : Int ) : Array[Rectangle] = {
+		
+		val areaWidth = width-1 // [0...width-1] = width elements
+		val areaHeight = height -1 // [0...height-1] = height elements
 		
 	    val regionExtend : Int = {
-				val area = areaWidth * areaHeight
-				val areaPerRegion = area / regionCount		
-				Math.floor( Math.sqrt( areaPerRegion ) ).toInt
+			val area = areaWidth * areaHeight
+			val areaPerRegion = area / regionCount		
+			Math.floor( Math.sqrt( areaPerRegion ) ).toInt
 		}
 		
 	    val tmp = new scala.collection.mutable.ListBuffer[Rectangle]()
 		var y = 0
-		while ( y < areaHeight) {
+		while ( y < areaHeight ) {
+			val y2 = y + regionExtend
+			val remainingHeight = if ( y2 > areaHeight) areaHeight -y else regionExtend
 			var x = 0
 			while ( x < areaWidth ) {
-				tmp + new Rectangle( x , y , regionExtend, regionExtend )
+				val x2 = x + regionExtend
+				val remainingWidth = if ( x2 > areaWidth ) areaWidth -x else regionExtend
+				tmp + new Rectangle( x , y , remainingWidth , remainingHeight )
 				x+= regionExtend + 1
 			}
 			y+= regionExtend + 1
 		}
-		tmp.toArray
+	    tmp.toArray[Rectangle]
+//	    // sort partitions from 
+//	    val sortingFunction : (Rectangle,Rectangle) => Boolean = {
+//	    	(that,other) => {
+//	    		if ( that.y < other.y ) {
+//	    			true
+//	    		} else if ( that.y > other.y ) {
+//	    			false
+//	    		} else if ( that.x < other.x ) {
+//	    			true
+//	    		} else if ( that.x > other.x ) {
+//	    			false
+//	    		} else {
+//	    			true
+//	    		}
+//	    	}
+//	    }
+//	    tmp.sortWith( sortingFunction ).toArray
 	}
 }
 
