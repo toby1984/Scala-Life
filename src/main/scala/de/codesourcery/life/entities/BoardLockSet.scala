@@ -25,6 +25,7 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 		}
 		result
 	}
+	
 	private val locks : Array[ ReentrantLock] = {
 		val tmp = new Array[ReentrantLock]( lockSet.length )
 		var i = 0
@@ -58,7 +59,9 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 			}
 			
 			if ( aquiredLockCount > 0 ) {
-//				println("Thread "+Thread.currentThread.getName+" aquired "+aquiredLocks.size+" locks")
+				if ( aquiredLockCount > 1 ) {
+					println("Thread "+Thread.currentThread.getName+" aquired "+aquiredLocks.size+" locks")
+				}
 				func
 				return
 			}

@@ -27,7 +27,6 @@ import java.awt.Rectangle
  * @author tobias.gierke@code-sourcery.de
  */
 class Board private (private var torus : Torus[Boolean] ) {
-
 	/**
 	 * Holds the simulation's current generation counter.
 	 */
@@ -354,8 +353,6 @@ class Board private (private var torus : Torus[Boolean] ) {
 			
 		}
 		
-		// torus.visitAll( lifeFunction )
-		 
 		val latch = new java.util.concurrent.CountDownLatch( partitions.length )
 		
 		var index = 0
@@ -382,9 +379,9 @@ class Board private (private var torus : Torus[Boolean] ) {
 		def run() 
 		{
 			try {
-				regionLocks.doWithRegionLock( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height) {
+//				regionLocks.doWithRegionLock( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height) {
 					torus.visit( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height , calcFunction )
-				}
+//				}
 			} catch {
 				case ex : Throwable => {
 					ex.printStackTrace()
