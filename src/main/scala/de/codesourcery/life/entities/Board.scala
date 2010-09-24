@@ -34,9 +34,17 @@ class Board private (private var torus : Torus[Boolean] ) {
 	
 	private var neighbourCountMap : Option[Torus[Int]] = None
 	
-	private val regionLocks : RegionLockSet = new BoardLockSet( torus.width , torus.height , Board.cpuCount )
-
-	private var partitions = BoardLockSet.partition( width,height , Board.cpuCount )
+	private var regionLocks : RegionLockSet = createLocks(torus.width,torus.height)
+	
+	private var partitions : Array[Rectangle] = createPartitions(torus.width,torus.height)
+	
+	private def createLocks(w:Int,h:Int) = {
+		new BoardLockSet( w , h , Board.cpuCount )
+	}
+	
+	private def createPartitions(w:Int,h:Int) = {
+		BoardLockSet.partition( w,h , Board.cpuCount )
+	}
 	
 	/**
 	 * Creates a game board with a given
@@ -89,7 +97,9 @@ class Board private (private var torus : Torus[Boolean] ) {
 	def resize(newWidth:Int,newHeight:Int) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
-		partitions = BoardLockSet.partition( newWidth,newHeight , 16 )
+		
+		regionLocks = createLocks(newWidth,newHeight)
+		partitions = createPartitions(newWidth,newHeight)
 		torus.resize( newWidth , newHeight )
 		neighbourCountMap  = None // ...needs to be recalculated
 	}
@@ -227,6 +237,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
 		} 
 		else {
+			println("Full neighbour count scan")
 			// calculate neighbour count map 
 			// because it's not set yet
 			getNeighbourCountMap()
@@ -331,7 +342,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		// trigger a full board scan
 		newBoard.neighbourCountMap  = Some( new AnyTorus[Int](width,height) )
 		
-		var isStable = true // set to false if at least one cell dies or comes alive
+		var isStable = new java.util.concurrent.atomic.AtomicBoolean(true) // set to false if at least one cell dies or comes alive
 		
 		// hint: this function relies on
 		// the fact that the new board is initially
@@ -343,10 +354,10 @@ class Board private (private var torus : Torus[Boolean] ) {
 			
 			if ( isAlive && ( count < 2 || count > 3 ) ) {
 				// cell dies (and since the new board is initially empty, we don't need to do a thing here)
-				isStable = false
+				isStable.set( false )
 			} else if ( ! isAlive && count == 3 ) {
 				newBoard.set( x , y , true ) // cell comes to life
-				isStable = false
+				isStable.set( false )
 			} else if ( isAlive ) { // cell stays the same
 				newBoard.set( x , y , true )
 			} // } else { /* cell stays dead */ }
@@ -357,8 +368,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		var index = 0
 		while ( index < partitions.length ) {
-			val task = new CalculationTask( partitions( index ) , latch , lifeFunction )
-			 Board.queueTask( task )
+			Board.queueTask( new CalculationTask( partitions( index ) , latch , lifeFunction ) )
 			index += 1
 		}
 		
@@ -371,7 +381,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		currentGeneration += 1
 		
-		return ! isStable
+		return ! isStable.get
 	}
 	
 	class CalculationTask(private val rect:Rectangle,private val latch:java.util.concurrent.CountDownLatch, calcFunction : => ( Int , Int , Boolean) => Unit ) extends Runnable {
@@ -379,13 +389,18 @@ class Board private (private var torus : Torus[Boolean] ) {
 		def run() 
 		{
 			try {
-//				regionLocks.doWithRegionLock( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height) {
+				/*
+				 * We need to lock a bigger region here
+				 * because the calculation always looks
+				 * and updates the neighbour count for a 3x3 block around 
+				 * a cell.
+				 */
+				regionLocks.doWithRegionLock( rect.x-1 , rect.y-1 , rect.x + rect.width+1 , rect.y+rect.height+1) {
 					torus.visit( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height , calcFunction )
-//				}
+				}
 			} catch {
 				case ex : Throwable => {
 					ex.printStackTrace()
-					println("Thread "+Thread.currentThread.getName+" caught Something Bad(tm)")
 				}
 			} finally {
 				latch.countDown()
@@ -396,10 +411,16 @@ class Board private (private var torus : Torus[Boolean] ) {
 
 object Board {
 	
+	// order of variables is IMPORTANT here....
+	val cpuCount : Int = {
+		val result = Runtime.getRuntime.availableProcessors
+		println("Using "+result+" CPUs.")
+		result
+	}
+	
 	private val threadPool = 
 			java.util.concurrent.Executors.newFixedThreadPool( cpuCount )
-	
-	def cpuCount : Int = 1 // Runtime.getRuntime.availableProcessors + 1
+		
 	
 	def queueTask( task : Runnable ) {
 		threadPool.execute( task )
@@ -471,15 +492,6 @@ object Board {
 		board.currentGeneration = tmp.currentGeneration
 	}
 
-	def createTorus(w:Int,h:Int) : Torus[Boolean] = {
-
-//		if ( 1 == 1 ) {
-//			return new HashSetTorus(w,h)
-//		}
-//		
-//		if ( QuadTree.isSupportedSize(w,h) ) {
-//			return new QuadTreeTorus(w,h)
-//		}
-		new BitfieldTorus(w,h)
-	}
+	def createTorus(w:Int,h:Int) : Torus[Boolean] = new BitfieldTorus(w,h)
+		// new HashSetTorus(w,h) 
 }

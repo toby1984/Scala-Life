@@ -38,6 +38,8 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	
 	private val drawPanel = new JPanel() 
 	{
+		
+		private val DRAW_GRID = false
 		private val CANVAS_WIDTH = 320
 		private val CANVAS_HEIGHT = 240
 		
@@ -85,8 +87,6 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
   		    var maxX  = getWidth
 		    var maxY = getHeight 
 			
-			val drawGrid = true
-			
 			val stepX = maxX.asInstanceOf[Float] / model.width.asInstanceOf[Float] 
 			val stepY = maxY.asInstanceOf[Float] / model.height.asInstanceOf[Float] 
 			
@@ -94,7 +94,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			val oldColor = graphics.getColor
 			graphics.setColor( java.awt.Color.black )
 			
-			if ( drawGrid ) {
+			if ( DRAW_GRID ) {
 				var x : Float = 0.0f;
 				while( x <= maxX ) {
 					graphics.drawLine( x.asInstanceOf[Int] , 0 , x.asInstanceOf[Int]  , maxY )
@@ -432,7 +432,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	def modelChanged() {
 		modelWidth.setText( model.width.toString )
 		modelHeight.setText( model.height.toString )
-		// drawPanel.repaint()
+		 drawPanel.repaint()
 	}
 	
 	

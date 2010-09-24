@@ -15,16 +15,7 @@ import java.awt.Rectangle
  */
 class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 
-	private val lockSet : Array[Area]= {
-		val rects = BoardLockSet.partition(width,height, lockCount )
-		var i = 0
-		val result = new Array[Area]( rects.length )
-		while ( i < rects.length ) {
-			result(i) = new Area( rects(i) )
-			i += 1
-		}
-		result
-	}
+	private val lockSet : Array[Rectangle]= BoardLockSet.partition(width,height, lockCount )
 	
 	private val locks : Array[ ReentrantLock] = {
 		val tmp = new Array[ReentrantLock]( lockSet.length )
@@ -40,12 +31,10 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 
 		val x2 = x1 + w
 		val y2 = y1 + h
-				
 
 		var aquiredLockCount = 0		
 		val aquiredLocks = new Array[ReentrantLock](lockSet.length)
 		try {
-			
 			var i = 0
 			while ( i < lockSet.length ) 
 			{
@@ -59,25 +48,25 @@ class BoardLockSet(width:Int,height:Int,lockCount:Int) extends RegionLockSet {
 			}
 			
 			if ( aquiredLockCount > 0 ) {
-				if ( aquiredLockCount > 1 ) {
-					println("Thread "+Thread.currentThread.getName+" aquired "+aquiredLocks.size+" locks")
-				}
 				func
 				return
 			}
-		
-		} finally {
-			var i = 0
-			while ( i < aquiredLockCount ) {
+			for ( rect <- lockSet ) {
+				println("Checked: "+rect)
+			}
+			throw new RuntimeException("Internal error, unable to lock region ("+x1+","+y1+") -> ("+x2+","+y2+")")
+		} 
+		finally {
+			for ( i <- 0 until aquiredLockCount ) {
 				aquiredLocks(i).unlock()
-				i+=1
 			}
 		}
-		throw new RuntimeException("Internal error, unable to lock region ("+x1+","+y1+") -> ("+x2+","+y2+")")
 	}
 }
 
 object BoardLockSet {
+	
+	private val cache = new java.util.concurrent.ConcurrentHashMap[Int,Array[Rectangle]]()
 	
 	/**
 	 * Partitions a rectangular area with 
@@ -93,6 +82,15 @@ object BoardLockSet {
 	 * @return 
 	 */
 	def partition(width:Int,height:Int, regionCount : Int ) : Array[Rectangle] = {
+		
+		var key : Int = 23
+		key = key*31+(width^(width << 16 ) )
+		key = key*31+(height^(height << 16 ) )
+		key = key*31+(regionCount^(regionCount << 16 ) )
+		
+		if ( cache.containsKey( key ) ) {
+			return cache.get( key )
+		}
 		
 		val areaWidth = width-1 // [0...width-1] = width elements
 		val areaHeight = height -1 // [0...height-1] = height elements
@@ -112,29 +110,16 @@ object BoardLockSet {
 			while ( x < areaWidth ) {
 				val x2 = x + regionExtend
 				val remainingWidth = if ( x2 > areaWidth ) areaWidth -x else regionExtend
-				tmp + new Rectangle( x , y , remainingWidth , remainingHeight )
+				val rect = new Rectangle( x , y , remainingWidth , remainingHeight )
+				println("Creating region "+rect)				
+				tmp + rect
 				x+= regionExtend + 1
 			}
 			y+= regionExtend + 1
 		}
-	    tmp.toArray[Rectangle]
-//	    // sort partitions from 
-//	    val sortingFunction : (Rectangle,Rectangle) => Boolean = {
-//	    	(that,other) => {
-//	    		if ( that.y < other.y ) {
-//	    			true
-//	    		} else if ( that.y > other.y ) {
-//	    			false
-//	    		} else if ( that.x < other.x ) {
-//	    			true
-//	    		} else if ( that.x > other.x ) {
-//	    			false
-//	    		} else {
-//	    			true
-//	    		}
-//	    	}
-//	    }
-//	    tmp.sortWith( sortingFunction ).toArray
+	    val result = tmp.toArray[Rectangle]
+	    cache.put( key ,result )
+	    result
 	}
 }
 
