@@ -32,10 +32,28 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	private var currentGeneration = 1
 	
+	/**
+	 * Holds the neighbour count for each cell.
+	 */
 	private var neighbourCountMap : Option[Torus[Int]] = None
 	
-	private var regionLocks = createLocks(torus.width,torus.height)
+	/**
+	 * Locks for guaranteeing exclusive access 
+	 * to a specific rectangular area of the board.
+	 * 
+	 *  The locks are used to make sure that no
+	 *  two threads access the same area of the board 
+	 *  concurrently.
+	 */
+	private var regionLocks : BoardLockSet = createLocks(torus.width,torus.height)
 	
+	/**
+	 * Array of rectangular, equally-spaced , non-overlapping regions
+	 * of the board.
+	 * 
+	 * Each region is a unit of work that may get handled by a
+	 * separate thread.   
+	 */
 	private var partitions : Array[Rectangle] = createPartitions(torus.width,torus.height)
 	
 	private def createLocks(w:Int,h:Int) = {
@@ -96,6 +114,12 @@ class Board private (private var torus : Torus[Boolean] ) {
 		result
 	}
 	
+	/**
+	 * Resizes the board.
+	 * 
+	 * @param newWidth
+	 * @param newHeight
+	 */
 	def resize(newWidth:Int,newHeight:Int) {
 		require( newWidth > 0 )
 		require( newHeight > 0 )
@@ -215,6 +239,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 			torus.set(x,y,alive)
 			
 		if ( oldValue == alive ) {
+			// cell status didn't change, nothing to do.
 			return
 		}
 		
@@ -238,6 +263,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 					}
 				}
 			}
+			// update neighbour count in a 3x3 area around the cell
 			torus.visit( x-1 , y-1 , x+1 , y+1 , countFunction )
 		} 
 		else {
@@ -272,7 +298,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 	 */
 	def isAlive(x:Int,y:Int) : Boolean = torus.get( x , y)
 	
-	def getNeighbourCountMap() : Torus[Int] = 
+	private def getNeighbourCountMap() : Torus[Int] = 
 	{
 		if ( neighbourCountMap.isDefined ) {
 			return neighbourCountMap.get
@@ -368,6 +394,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 			
 		}
 		
+		// latch gets decremented each time a unit of work has been completed
 		val latch = new java.util.concurrent.CountDownLatch( partitions.length )
 		
 		var index = 0
@@ -395,9 +422,9 @@ class Board private (private var torus : Torus[Boolean] ) {
 			try {
 				/*
 				 * We need to lock a bigger region here
-				 * because the calculation always looks
+				 * because the calculation always looks at
 				 * and updates the neighbour count for a 3x3 block around 
-				 * a cell.
+				 * each cell.
 				 */
 				regionLocks.doWithRegionLock( rect.x-1 , rect.y-1 , rect.x + rect.width+1 , rect.y+rect.height+1) {
 					torus.visit( rect.x , rect.y , rect.x + rect.width , rect.y+rect.height , calcFunction )
@@ -415,7 +442,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 
 object Board {
 	
-	// order of variables is IMPORTANT here....
+	// order of variables is IMPORTANT here....otherwise NPE will come along
 	val cpuCount : Int = {
 		val result = Runtime.getRuntime.availableProcessors
 		println("Using "+result+" CPUs.")

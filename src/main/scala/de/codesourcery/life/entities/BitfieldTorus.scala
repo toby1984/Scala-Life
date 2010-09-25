@@ -26,10 +26,10 @@ class BitfieldTorus( private val data : BitfieldStorage  ) extends Torus[Boolean
 class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean](w,h) {
 	
 	// number of bits per array element
-	private val ARRAY_ELEMENT_BIT_WIDTH = 32
+	private val ARRAY_ELEMENT_BIT_WIDTH = 32 // update SHIFT_BITCOUNT as well when changing this
 	
 	// I use shift operations instead of divide / multiply
-	private val SHIFT_BITCOUNT = 5 // = 2^5 = 32 
+	private val SHIFT_BITCOUNT = 5 // = 2^5 = 32 = ARRAY_ELEMENT_BIT_WIDTH
 	
 	private val paddedWidth : Int =  if ( ( w % ARRAY_ELEMENT_BIT_WIDTH ) != 0 ) {
 		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
