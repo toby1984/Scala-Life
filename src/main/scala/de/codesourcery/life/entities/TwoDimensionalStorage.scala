@@ -6,7 +6,7 @@ package de.codesourcery.life.entities
  * <p>Note that coordinates always start at 0</p>
  * @author tobias.gierke@code-sourcery.de
  */
-abstract class TwoDimensionalStorage[T](val width:Int,val height:Int) {
+abstract class TwoDimensionalStorage[@specialized(Int,Boolean) T](val width:Int,val height:Int) {
 
 	/**
 	 * Returns the value at a given X/Y coordinate.

@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
  *  </p>
  * @param b
  */
-abstract class Torus[T]( private var data : TwoDimensionalStorage[T]) {
+abstract class Torus[ @specialized(Int,Boolean) T]( var data : TwoDimensionalStorage[T]) {
 	
 	/**
 	 * Returns the actual width of the array.

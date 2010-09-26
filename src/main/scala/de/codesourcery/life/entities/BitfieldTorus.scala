@@ -8,18 +8,18 @@ import scala.collection.mutable.ArrayBuffer
  * 
  * @author Tobias.Gierke@code-sourcery.de
  */
-class BitfieldTorus( private val data : BitfieldStorage  ) extends Torus[Boolean](data) {
+class BitfieldTorus( private val stuff : BitfieldStorage  ) extends Torus[Boolean](stuff) {
 
 	def this(width:Int,height:Int) {
 		this( new BitfieldStorage(width,height) )
 	}
 	
 	def createCopy() : BitfieldTorus = {
-		new BitfieldTorus( data.createCopy() )
+		new BitfieldTorus( data.createCopy().asInstanceOf[BitfieldStorage] )
 	}
 	
 	def visitAlive( func : => (Int,Int) => Unit ) {
-		data.visitAlive( func )
+		data.asInstanceOf[BitfieldStorage].visitAlive( func )
 	}
 }
 
@@ -111,11 +111,11 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 
  		val result = new BitfieldStorage( newWidth , newHeight )
 
- 		val copyFunction : (Int,Int,Boolean) => Unit = { (x,y,isSet) => {
+ 		val copyFunction :  (Int,Int,Boolean)  => Unit = (x,y,isSet) => {
  			if ( isSet && ( x < newWidth && y < newHeight ) ) {
  				result.setValueAt( x , y , true )
  			}
- 		} }
+ 		}
  	    visitAll( copyFunction );
  		result
 	}	
