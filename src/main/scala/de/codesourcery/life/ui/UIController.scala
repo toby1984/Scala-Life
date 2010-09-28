@@ -16,7 +16,7 @@ import de.codesourcery.life.simulator._
  * 
  * @author tobias.gierke@code-sourcery.de
  */
-abstract class UIController(private val m : Board , private val view : View ) {
+abstract class UIController(val model : Board , private val view : View ) {
 
 	private var lastState : Option[Board] = None
 	
@@ -46,7 +46,7 @@ abstract class UIController(private val m : Board , private val view : View ) {
 			counter += 1
 			if ( ( counter % 200 ) == 0 ) {
 				val format = new java.text.DecimalFormat("###,###,###,###")
-				val cellsPerSecond =  ( m.width * m.height) / ( time1 / (1000*1000*1000) )  
+				val cellsPerSecond =  ( model.width * model.height) / ( time1 / (1000*1000*1000) )  
 				println("Cells / second : "+format.format( cellsPerSecond) )
 			}			
 			
@@ -59,8 +59,6 @@ abstract class UIController(private val m : Board , private val view : View ) {
 		}
     }
 	
-	def model : Board = m
-    
 	private val clock = new Clock( listener )
 	
 	def resetButtonClicked() {

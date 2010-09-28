@@ -31,6 +31,8 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 	// I use shift operations instead of divide / multiply
 	private val SHIFT_BITCOUNT = 5 // = 2^5 = 32 = ARRAY_ELEMENT_BIT_WIDTH
 	
+	// the width needs to be a multitude of ARRAY_ELEMENT_BIT_WIDTH (read: 2^X)
+	// so we might need to align the width provided by the client for our internal use 
 	private val paddedWidth : Int =  if ( ( w % ARRAY_ELEMENT_BIT_WIDTH ) != 0 ) {
 		val tmp :Int = Math.ceil( w.asInstanceOf[Float] / ARRAY_ELEMENT_BIT_WIDTH.asInstanceOf[Float] ).asInstanceOf[Int]
 		tmp * ARRAY_ELEMENT_BIT_WIDTH
@@ -40,7 +42,9 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 	
 	private var data : Array[Int]= new Array[Int]( calcLength(w,h ) )
 	
-	def calcLength(aWidth : Int, aHeight : Int ) : Int = {
+	// calculate data array element size (length) using the correctly
+	// aligned width
+	private def calcLength(aWidth : Int, aHeight : Int ) : Int = {
 		Math.ceil( ( aHeight * paddedWidth ) / ARRAY_ELEMENT_BIT_WIDTH ).asInstanceOf[Int]
 	}
 	
@@ -78,6 +82,11 @@ class BitfieldStorage(val w:Int,val h:Int) extends TwoDimensionalStorage[Boolean
 	
 	def getValueAt(x:Int,y:Int) : Boolean = {
 		
+		// note: the bit fiddling code in getValueAt() / setValueAt() is 
+		// intentionally copied instead of put into a function because
+		// we would need to return a tuple (byteOffset,offsetInByte)
+		// and there's just no way the compiler can be 
+		// smart enough to avoid the tuple creation
 		val bitOffset : Int = x + y* paddedWidth
 		val byteOffset : Int = bitOffset >>> SHIFT_BITCOUNT //   read: bitOffset / ARRAY_ELEMENT_BIT_WIDTH 
 		val offsetInByte : Int = bitOffset - ( byteOffset  << SHIFT_BITCOUNT ) // read: byteOffset * ARRAY_ELEMENT_BIT_WIDTH )
