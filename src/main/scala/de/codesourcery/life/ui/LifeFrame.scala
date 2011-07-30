@@ -41,9 +41,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		addChangeListener( new ChangeListener() { 
 			def stateChanged(ev:ChangeEvent) 
 			{
-			  if ( ! ev.isValueAdjusting ) {
-				controller.foreach( _.speedChanged( getValue() ) )
-			  }
+  			   controller.foreach( _.speedChanged( getValue() ) )
 			}
 		})
 	}
