@@ -49,8 +49,8 @@ class Clock(private val caller : ClockListener )
 					} while ( ! stopRequested.get )
 						
 				} finally {
+				  	caller.clockStateChanged( false )
 					queue.countDown()
-					caller.clockStateChanged( false )
 				}
 			}
 			
@@ -60,6 +60,7 @@ class Clock(private val caller : ClockListener )
 			
 			def waitForDeath() {
 				queue.await()
+				println("Clock thread stopped.")
 			}
 		}
 		

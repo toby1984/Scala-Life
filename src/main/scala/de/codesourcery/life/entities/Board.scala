@@ -64,7 +64,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		BoardLockSet.partition( w,h , getPartitionCount(w,h) )
 	}
 	
-	private def getPartitionCount(w:Int,h:Int) = Board.cpuCount * 4
+	private def getPartitionCount(w:Int,h:Int) = Board.cpuCount * 8
 	
 	/**
 	 * Creates a game board with a given
@@ -245,20 +245,19 @@ class Board private (private var torus : Torus[Boolean] ) {
 		
 		// update neighbour count
 		// by incrementing or decrementing
-		// the count of all direct neighbours
+		// the count of all adjacent neighbour cells
 		
 		if ( neighbourCountMap.isDefined) 
 		{
 			val map = neighbourCountMap.get
 			val increment = if ( alive ) 1 else -1
-			val countFunction : (Int,Int,Boolean) => Unit = (currentX,currentY,isSet) => {
-				if ( currentX != x || currentY != y ) {
-					val value = map.get( currentX ,currentY )
-					var newValue = value + increment
-					if ( newValue < 0 ) {
-						newValue=0
-					}
-					if ( value != newValue ) {
+			
+			def countFunction(currentX:Int,currentY:Int,isSet:Boolean)
+			{
+				if ( currentX != x || currentY != y ) 
+				{
+					var newValue = map.get( currentX ,currentY ) + increment
+					if ( newValue >= 0 ) {
 						map.set( currentX , currentY , newValue )
 					}
 				}
@@ -272,9 +271,8 @@ class Board private (private var torus : Torus[Boolean] ) {
 			// because it's not set yet
 			getNeighbourCountMap()
 		}
-		
-		this
 	}
+	
 	/**
 	 * Marks a cell at a given X-Y coordinate as being alive.
 	 * 
@@ -378,7 +376,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		// the fact that the new board is initially
 		// clear (=no cells alive) and does
 		// not flag 'dead' cells.
-		val lifeFunction : ( Int , Int , Boolean) => Unit = (x,y,isAlive) => 
+		def lifeFunction( x : Int , y : Int , isAlive : Boolean) 
 		{
 			val count = neighbourCount.get( x ,y )
 			
@@ -415,7 +413,7 @@ class Board private (private var torus : Torus[Boolean] ) {
 		return ! isStable.get
 	}
 	
-	class CalculationTask(private val rect:Rectangle,private val latch:java.util.concurrent.CountDownLatch, calcFunction : => ( Int , Int , Boolean) => Unit ) extends Runnable {
+	class CalculationTask(rect:Rectangle,latch:java.util.concurrent.CountDownLatch, calcFunction : => ( Int , Int , Boolean) => Unit ) extends Runnable {
 		
 		def run() 
 		{
@@ -450,7 +448,7 @@ object Board {
 	}
 	
 	private val threadPool = 
-			java.util.concurrent.Executors.newFixedThreadPool( cpuCount )
+			java.util.concurrent.Executors.newFixedThreadPool( cpuCount+5 )
 		
 	
 	def queueTask( task : Runnable ) {
@@ -524,5 +522,5 @@ object Board {
 	}
 
 	def createTorus(w:Int,h:Int) : Torus[Boolean] = new BitfieldTorus(w,h)
-		// new HashSetTorus(w,h) 
+		// TODO: QuadTreeTorus(w,h) is currently still broken...needs fixing...  
 }

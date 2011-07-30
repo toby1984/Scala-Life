@@ -2,6 +2,7 @@ package de.codesourcery.life.ui
 
 import de.codesourcery.life.entities.Board
 import de.codesourcery.life.simulator._
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Application controller.
@@ -20,13 +21,15 @@ abstract class UIController(val model : Board , private val view : View ) {
 
 	private var lastState : Option[Board] = None
 	
+	private val benchmark = new Benchmark	 
+		    
 	private val listener = new ClockListener() {
-		
-		var counter : Long = 0
 		
 		def clockStateChanged(isRunning:Boolean) {
 			if ( isRunning == false ) {
-				counter = 0
+				benchmark.stop()
+			} else {
+			    benchmark.reset()
 			}
 			view.simulatorStateChanged( isRunning )
 		}
@@ -37,18 +40,13 @@ abstract class UIController(val model : Board , private val view : View ) {
 			// clock by returning false
 			// if the model population
 			// no longer changes
-			
-			
-			var time1 : Double = -System.nanoTime
-			val continue = model.advance()
-			time1 += System.nanoTime
-			
-			counter += 1
-			if ( ( counter % 200 ) == 0 ) {
-				val format = new java.text.DecimalFormat("###,###,###,###")
-				val cellsPerSecond =  ( model.width * model.height) / ( time1 / (1000*1000*1000) )  
-				println("Cells / second : "+format.format( cellsPerSecond) )
-			}			
+
+		    var continue = false;
+			benchmark.time( () => {
+					continue = model.advance()
+					model.width * model.height
+				}
+			)
 			
 			if ( continue ) {
 				view.modelChanged()
@@ -59,7 +57,18 @@ abstract class UIController(val model : Board , private val view : View ) {
 		}
     }
 	
+	private var benchmarkThread : Option[BenchmarkThread] = None
+	
 	private val clock = new Clock( listener )
+	
+	def benchmarkIsRunning() : Boolean = {
+	  this.synchronized{
+		  benchmarkThread match {
+		    case Some(thread) => thread.isAlive
+		    case _ => false
+		  }
+	  }
+	}
 	
 	def resetButtonClicked() {
 		updateBoard {
@@ -127,8 +136,21 @@ abstract class UIController(val model : Board , private val view : View ) {
 		}
 	}
 	
-	def stopButtonClicked() {
+	private def internalStopButtonClicked() 
+	{
 		clock.stop()
+	}	
+	
+	def stopButtonClicked() 
+	{
+	    val threadToStop = this.synchronized {
+	      benchmarkThread
+	    }
+	    if ( threadToStop.isDefined ) {
+	      threadToStop.get.terminate()
+        } else {
+    	  internalStopButtonClicked()
+        }	    
 	}
 	
 	def saveStateToFileClicked() {
@@ -147,6 +169,63 @@ abstract class UIController(val model : Board , private val view : View ) {
 			}
 		}
 	}	
+	
+	private class BenchmarkThread extends Thread 
+	{
+	    private val abort = new AtomicBoolean(false)
+	    
+	    override def run() 
+	    {
+	    	try {
+	    	  view.benchmarkStarted()
+	    	  startButtonClicked()
+	    	  var durationInSeconds = 30
+	    	  while ( ! abort.get && durationInSeconds > 0 ) 
+	    	  {
+	    	      if ( ( durationInSeconds % 10 ) == 0 ) {
+	    	        println("Benchmark running, "+durationInSeconds+" seconds to go ...")
+	    	      }
+	    		  java.lang.Thread.sleep( 1000 )
+	    		  durationInSeconds -= 1
+	    	  }
+			} finally {
+			  view.benchmarkFinished()
+			  internalStopButtonClicked()
+			  view.displayBenchmarkResults( benchmark )
+			  UIController.this.synchronized {
+				  benchmarkThread = None
+			  }
+			}
+	    }	  
+	    
+	    def terminate() {
+	      abort.set( true )
+	    }
+	}
+	
+	private def performBenchmark() 
+	{
+	  benchmarkThread = Some( new BenchmarkThread() )
+	  benchmarkThread.get.start()
+	}	
+	
+	def benchmarkButtonClicked() 
+	{
+	  def startBenchmark() {
+	    stopButtonClicked()
+	    recallStateClicked()
+	    performBenchmark()
+	  }
+	  
+	  this.synchronized 
+	  {
+	     benchmarkThread match {
+	       case Some(thread) if ! thread.isAlive =>  startBenchmark()
+	       case None => startBenchmark()
+	       case _ =>
+	     }
+	  }
+	}
 	
 	def startButtonClicked() {
 		clock.start()

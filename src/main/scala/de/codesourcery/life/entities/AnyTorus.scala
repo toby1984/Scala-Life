@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
  * 
  * @author Tobias.Gierke@code-sourcery.de
  */
-class AnyTorus[ @specialized ( Int ) T]( private val storage : TwoDimensionalStorage[T] ) extends Torus[T](storage) {
+class AnyTorus[T]( private val storage : TwoDimensionalStorage[T] ) extends Torus[T](storage) {
 
 	def this(width:Int,height:Int) {
 		this( new ArrayStorage[T](width,height) )
@@ -22,7 +22,7 @@ class AnyTorus[ @specialized ( Int ) T]( private val storage : TwoDimensionalSto
 
 }
 
-private class ArrayStorage[ @specialized(Int) T](val w:Int,val h:Int) extends TwoDimensionalStorage[T](w,h) {
+private class ArrayStorage[T](val w:Int,val h:Int) extends TwoDimensionalStorage[T](w,h) {
 	
 	private var data = new Array[Array[Any]](width)
 	

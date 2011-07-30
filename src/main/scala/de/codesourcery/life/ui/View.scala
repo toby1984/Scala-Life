@@ -34,6 +34,12 @@ trait View {
 	 */
 	def savedStateAvailable()
 	
+	def benchmarkStarted()
+	
+	def benchmarkFinished()
+	
+	def displayBenchmarkResults(benchmark:Benchmark)
+	
 	/**
 	 * Called whenever the simulation speed has changed.
 	 * 

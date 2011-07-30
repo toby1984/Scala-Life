@@ -15,6 +15,7 @@ import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JSlider
 import javax.swing.event.{ChangeListener,ChangeEvent}
+import scala.collection.mutable.ListBuffer
 
 class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 
@@ -150,7 +151,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 			
 			super.paint(graphics )
 			
-			if ( controller.isDefined ) {
+			if ( controller.isDefined && ! controller.get.benchmarkIsRunning ) {
 				paintFunction( graphics )
 			}
 		}	
@@ -235,13 +236,43 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	
 	private[this] val saveStateButton = new JButton("Save state")
 	private[this] val recallStateButton = new JButton("Recall state") {
-		setEnabled( false )
+	    setEnabled( false )
+	}
+	
+	private[this] val benchmarkButton = new JButton("Benchmark") {
+        setEnabled(false)
 	}
 	
 	private[this] val resetButton = new JButton("Reset")
 	
+	private[this] val buttons = List( loadFromFileButton , benchmarkButton , saveToFileButton , clearButton,startButton,
+	    saveStateButton,recallStateButton,resetButton)
+	    
+	private[this] var buttonStates = List[Boolean]()
+	
+	def benchmarkStarted() 
+	{
+	   buttonStates = buttons.collect( { case button : JButton => {
+	       val oldState = button.isEnabled
+	       button.setEnabled( false )
+	       oldState
+	     }
+	   })
+	}
+	
+	def displayBenchmarkResults(benchmark:Benchmark) 
+	{
+	  println("Benchmark results: "+benchmark.formatCellsPerSecond( benchmark.averageCellsPerSecond ) +" cells/s")
+	}
+	
+	def benchmarkFinished() 
+	{
+	  buttons.zip( buttonStates ).foreach( x => x._1.setEnabled( x._2) )
+	}
+	
 	def savedStateAvailable() {
 		recallStateButton.setEnabled( true )
+		benchmarkButton.setEnabled(true)
 	}
 	
 	private def updateSimulatorSpeed( delayInMillis : Int ) {
@@ -399,7 +430,9 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 					controller.get.loadStateFromFileClicked()
 				} else if ( button == saveToFileButton) {
 					controller.get.saveStateToFileClicked()
-				}				
+				} else if ( button == benchmarkButton ) {
+					controller.get.benchmarkButtonClicked()
+				}
 			}
 		}
 		
@@ -411,6 +444,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		recallStateButton.addActionListener( listener )		
 		loadFromFileButton.addActionListener( listener )
 		saveToFileButton.addActionListener( listener )
+		benchmarkButton.addActionListener( listener )
 
 		// left panel
 		val leftPanel = new JPanel()
@@ -424,6 +458,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 		leftPanel.add( clearButton , constraints(0,5).fillHorizontal().build() )
 		leftPanel.add( recallStateButton , constraints(0,6).fillHorizontal().build() )
 		leftPanel.add( loadFromFileButton , constraints(0,7).fillHorizontal().build() )
+		leftPanel.add( benchmarkButton , constraints(0,8).fillHorizontal().build() )
 		
 		// right panel
 		val rightPanel = new JPanel()
@@ -459,7 +494,7 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	def modelChanged() {
 		modelWidth.setText( model.width.toString )
 		modelHeight.setText( model.height.toString )
-		 drawPanel.repaint()
+		drawPanel.repaint()
 	}
 	
 	setDefaultCloseOperation(  javax.swing.JFrame.EXIT_ON_CLOSE )
