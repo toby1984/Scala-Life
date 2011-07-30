@@ -79,6 +79,7 @@ abstract class UIController(val model : Board , private val view : View ) {
 	def speedChanged(percent:Int) {
 		val delay = Math.round( 1000.0  * ( percent / 100.0 ) )
 		clock.tickIntervalMillis = delay.asInstanceOf[Int]
+		println("Delay set to "+clock.tickIntervalMillis+" milliseconds.")
 		view.simulatorSpeedChanged( delay.asInstanceOf[Int] )
 	}
 	
@@ -176,6 +177,9 @@ abstract class UIController(val model : Board , private val view : View ) {
 	    
 	    override def run() 
 	    {
+	        val oldDelay = clock.tickIntervalMillis
+	        clock.tickIntervalMillis = 0
+	        
 	    	try {
 	    	  view.benchmarkStarted()
 	    	  startButtonClicked()
@@ -188,9 +192,12 @@ abstract class UIController(val model : Board , private val view : View ) {
 	    		  java.lang.Thread.sleep( 1000 )
 	    		  durationInSeconds -= 1
 	    	  }
-			} finally {
+			}
+	        finally 
+			{
 			  view.benchmarkFinished()
 			  internalStopButtonClicked()
+			  clock.tickIntervalMillis = oldDelay
 			  view.displayBenchmarkResults( benchmark )
 			  UIController.this.synchronized {
 				  benchmarkThread = None

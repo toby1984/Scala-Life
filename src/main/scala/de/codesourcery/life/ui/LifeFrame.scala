@@ -39,8 +39,11 @@ class LifeFrame extends javax.swing.JFrame("The Scala Game of Life") with View {
 	
 	private val speedDial = new JSlider(0,100,50) {
 		addChangeListener( new ChangeListener() { 
-			def stateChanged(ev:ChangeEvent) {
+			def stateChanged(ev:ChangeEvent) 
+			{
+			  if ( ! ev.isValueAdjusting ) {
 				controller.foreach( _.speedChanged( getValue() ) )
+			  }
 			}
 		})
 	}
